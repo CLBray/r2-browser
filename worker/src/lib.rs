@@ -19,6 +19,7 @@ fn log_request(req: &Request) {
     );
 }
 
+// Main entry point for ES module format
 #[event(fetch)]
 pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     log_request(&req);
