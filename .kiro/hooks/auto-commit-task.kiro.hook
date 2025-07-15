@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Auto Commit on Task Completion",
+  "description": "Automatically commits changes to the git repository whenever a task is completed",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A task has been completed and files have been modified. Please commit all changes to the git repository with an appropriate commit message that describes what was accomplished."
+  }
+}

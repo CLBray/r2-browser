@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Kiro Git Sync",
+  "description": "Automatically commits and pushes changes to Kiro specifications to the git repository when they are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The Kiro specifications have been modified. Please commit these changes to git with an appropriate commit message and push them to the remote repository. Use git add, git commit, and git push commands to sync the changes."
+  }
+}
