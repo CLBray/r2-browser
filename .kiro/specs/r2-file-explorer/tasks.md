@@ -11,7 +11,7 @@
   - Create basic README.md with setup instructions
   - _Requirements: All requirements depend on proper project setup_
 
-- [x] 2. Configure Cloudflare Worker environment and bindings
+- [ ] 2. Configure Cloudflare Worker environment and bindings
   - Set up wrangler.toml with R2 bucket and KV namespace bindings
   - Configure environment variables for JWT secret and CORS origins
   - Create development and production environment configurations
