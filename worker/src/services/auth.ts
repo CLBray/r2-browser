@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import jwt from '@tsndr/cloudflare-worker-jwt'
 import { v4 as uuidv4 } from 'uuid'
 import type { AuthCredentials, SessionData, JWTPayload, Bindings } from '../types'
 
@@ -74,7 +74,7 @@ export class AuthService {
     })
 
     // Generate JWT token
-    const token = this.generateJWT(userId, sessionId)
+    const token = await this.generateJWT(userId, sessionId)
 
     return { token, expiresAt }
   }
@@ -85,7 +85,12 @@ export class AuthService {
   async validateToken(token: string): Promise<SessionData | null> {
     try {
       // Verify JWT
-      const payload = jwt.verify(token, this.jwtSecret) as JWTPayload
+      const isValid = await jwt.verify(token, this.jwtSecret)
+      if (!isValid) {
+        return null
+      }
+
+      const payload = jwt.decode(token).payload as JWTPayload
       
       // Get session from KV
       const sessionKey = `session:${payload.sessionId}`
@@ -116,7 +121,12 @@ export class AuthService {
    */
   async revokeSession(token: string): Promise<boolean> {
     try {
-      const payload = jwt.verify(token, this.jwtSecret) as JWTPayload
+      const isValid = await jwt.verify(token, this.jwtSecret)
+      if (!isValid) {
+        return false
+      }
+      
+      const payload = jwt.decode(token).payload as JWTPayload
       await this.kv.delete(`session:${payload.sessionId}`)
       return true
     } catch (error) {
@@ -149,7 +159,7 @@ export class AuthService {
   /**
    * Generate a JWT token
    */
-  private generateJWT(userId: string, sessionId: string): string {
+  private async generateJWT(userId: string, sessionId: string): Promise<string> {
     const payload: JWTPayload = {
       userId,
       sessionId,
@@ -157,7 +167,7 @@ export class AuthService {
       iat: Math.floor(Date.now() / 1000)
     }
 
-    return jwt.sign(payload, this.jwtSecret)
+    return await jwt.sign(payload, this.jwtSecret)
   }
 
 

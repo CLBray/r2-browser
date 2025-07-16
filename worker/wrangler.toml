@@ -6,6 +6,7 @@ compatibility_date = "2024-01-01"
 [assets]
 directory = "../frontend/dist"
 binding = "ASSETS"
+bucket = "file-explorer-assets-dev"
 
 # Development R2 bucket binding for file storage
 [[r2_buckets]]

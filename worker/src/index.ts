@@ -220,6 +220,15 @@ app.delete('/api/files/:filename', authMiddleware, async (c) => {
 // Static asset serving for React frontend
 app.get('*', async (c) => {
     try {
+        // Check if ASSETS binding is available (not available in tests)
+        if (!c.env.ASSETS) {
+            return c.json({
+                success: false,
+                error: 'Not Found',
+                message: 'The requested resource does not exist'
+            }, 404)
+        }
+
         // Try to serve the requested static asset
         const url = new URL(c.req.url)
         const assetResponse = await c.env.ASSETS.fetch(c.req.raw)

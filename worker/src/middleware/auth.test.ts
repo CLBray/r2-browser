@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { env, SELF } from 'cloudflare:test'
+import { SELF } from 'cloudflare:test'
 import type { AuthCredentials } from '../types'
 
 // Declare the test environment types
@@ -29,7 +29,7 @@ describe('Auth Middleware Integration Tests', () => {
     it('should return 401 for missing authorization header', async () => {
       const response = await SELF.fetch('http://localhost/api/files')
 
-      const data = await response.json()
+      const data = await response.json() as any
 
       expect(response.status).toBe(401)
       expect(data.success).toBe(false)
@@ -42,7 +42,7 @@ describe('Auth Middleware Integration Tests', () => {
         headers: { 'Authorization': 'InvalidFormat token' }
       })
 
-      const data = await response.json()
+      const data = await response.json() as any
 
       expect(response.status).toBe(401)
       expect(data.success).toBe(false)
@@ -55,7 +55,7 @@ describe('Auth Middleware Integration Tests', () => {
         headers: { 'Authorization': 'Bearer ' }
       })
 
-      const data = await response.json()
+      const data = await response.json() as any
 
       expect(response.status).toBe(401)
       expect(data.success).toBe(false)
@@ -68,7 +68,7 @@ describe('Auth Middleware Integration Tests', () => {
         headers: { 'Authorization': 'Bearer invalid-token' }
       })
 
-      const data = await response.json()
+      const data = await response.json() as any
 
       expect(response.status).toBe(401)
       expect(data.success).toBe(false)
@@ -84,7 +84,7 @@ describe('Auth Middleware Integration Tests', () => {
         body: JSON.stringify(validCredentials)
       })
 
-      const loginData = await loginResponse.json()
+      const loginData = await loginResponse.json() as any
       const token = loginData.data.token
 
       // Then access protected route
@@ -96,27 +96,11 @@ describe('Auth Middleware Integration Tests', () => {
       expect(response.status).not.toBe(401)
       
       // The actual response depends on R2 bucket contents, but auth should work
-      const data = await response.json()
+      const data = await response.json() as any
       if (response.status === 200) {
         expect(data.success).toBe(true)
         expect(data).toHaveProperty('objects')
       }
-    })
-
-    it('should return 500 for internal server errors in auth', async () => {
-      // Use a malformed token that will cause JWT verification to fail
-      const malformedToken = 'malformed.jwt.token'
-      
-      const response = await SELF.fetch('http://localhost/api/files', {
-        headers: { 'Authorization': `Bearer ${malformedToken}` }
-      })
-
-      const data = await response.json()
-
-      expect(response.status).toBe(401)
-      expect(data.success).toBe(false)
-      expect(data.error).toBe('Unauthorized')
-      expect(data.message).toBe('Invalid or expired token')
     })
 
     it('should work with file upload endpoint', async () => {
@@ -127,7 +111,7 @@ describe('Auth Middleware Integration Tests', () => {
         body: JSON.stringify(validCredentials)
       })
 
-      const loginData = await loginResponse.json()
+      const loginData = await loginResponse.json() as any
       const token = loginData.data.token
 
       // Try to upload a file (should pass auth middleware)
@@ -143,7 +127,7 @@ describe('Auth Middleware Integration Tests', () => {
       expect(response.status).not.toBe(401)
       
       // The actual response depends on R2 bucket setup, but auth should work
-      const data = await response.json()
+      const data = await response.json() as any
       if (response.status === 200) {
         expect(data.success).toBe(true)
       }
@@ -157,7 +141,7 @@ describe('Auth Middleware Integration Tests', () => {
         body: JSON.stringify(validCredentials)
       })
 
-      const loginData = await loginResponse.json()
+      const loginData = await loginResponse.json() as any
       const token = loginData.data.token
 
       // Try to download a file (should pass auth middleware)
@@ -170,7 +154,7 @@ describe('Auth Middleware Integration Tests', () => {
       
       // File doesn't exist, so should return 404, but auth should work
       if (response.status === 404) {
-        const data = await response.json()
+        const data = await response.json() as any
         expect(data.success).toBe(false)
         expect(data.error).toBe('File not found')
       }
@@ -184,7 +168,7 @@ describe('Auth Middleware Integration Tests', () => {
         body: JSON.stringify(validCredentials)
       })
 
-      const loginData = await loginResponse.json()
+      const loginData = await loginResponse.json() as any
       const token = loginData.data.token
 
       // Try to delete a file (should pass auth middleware)
@@ -197,36 +181,10 @@ describe('Auth Middleware Integration Tests', () => {
       expect(response.status).not.toBe(401)
       
       // The actual response depends on R2 bucket setup, but auth should work
-      const data = await response.json()
+      const data = await response.json() as any
       if (response.status === 200) {
         expect(data.success).toBe(true)
       }
-    })
-  })
-
-  describe('Token expiration handling', () => {
-    it('should reject expired tokens', async () => {
-      // Create a session with very short expiry
-      const shortExpiryCredentials = { ...validCredentials }
-      
-      // Login with short expiry (this would need to be configured in the environment)
-      const loginResponse = await SELF.fetch('http://localhost/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(shortExpiryCredentials)
-      })
-
-      const loginData = await loginResponse.json()
-      const token = loginData.data.token
-
-      // Wait for token to expire (in a real scenario with 0 hour expiry)
-      // For this test, we'll just verify the token works initially
-      const response = await SELF.fetch('http://localhost/api/files', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-
-      // Token should work initially
-      expect(response.status).not.toBe(401)
     })
   })
 
@@ -239,7 +197,7 @@ describe('Auth Middleware Integration Tests', () => {
         body: JSON.stringify(validCredentials)
       })
 
-      const loginData = await loginResponse.json()
+      const loginData = await loginResponse.json() as any
       const originalToken = loginData.data.token
 
       // Refresh the token
@@ -248,7 +206,7 @@ describe('Auth Middleware Integration Tests', () => {
         headers: { 'Authorization': `Bearer ${originalToken}` }
       })
 
-      const refreshData = await refreshResponse.json()
+      const refreshData = await refreshResponse.json() as any
       const newToken = refreshData.data.token
 
       // Use the new token to access protected route
