@@ -19,7 +19,7 @@
 - **Compute**: Cloudflare Workers (serverless, global edge)
 - **Storage**: Cloudflare R2 for object storage
 - **Session Management**: Cloudflare KV
-- **Frontend Hosting**: Cloudflare Pages
+- **Frontend Hosting**: Cloudflare Workers with Static Assets
 - **CDN**: Cloudflare global network
 
 ## Development Tools
@@ -49,9 +49,9 @@ npm run test:worker            # Run Worker tests
 
 ### Deployment
 ```bash
-# Deploy to production
-wrangler publish --env production
-npm run build && npm run deploy
+# Build frontend and deploy Worker with static assets
+cd frontend && npm run build
+cd ../worker && wrangler deploy --env production
 ```
 
 ## Configuration Files

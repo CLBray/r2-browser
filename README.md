@@ -20,6 +20,7 @@ A web-based file management application that provides a familiar desktop file ma
 - **Styling**: Tailwind CSS
 - **File Uploads**: React Dropzone
 - **HTTP Client**: Fetch API
+- **Hosting**: Cloudflare Workers with Static Assets
 
 ### Backend
 - **Runtime**: Cloudflare Workers
@@ -108,15 +109,26 @@ wrangler publish               # Deploy to production
 
 ## Deployment
 
-### Frontend (Cloudflare Pages)
+The application is deployed as a single Cloudflare Worker with static assets serving the React frontend.
+
+### Build and Deploy
 ```bash
+# Build the React frontend
+cd frontend
 npm run build
-# Deploy the dist/ folder to Cloudflare Pages
+
+# Deploy Worker with static assets
+cd ../worker
+wrangler deploy --env production
 ```
 
-### Worker
+### Environment-specific Deployments
 ```bash
-wrangler publish --env production
+# Deploy to staging
+wrangler deploy --env staging
+
+# Deploy to production
+wrangler deploy --env production
 ```
 
 ## Authentication

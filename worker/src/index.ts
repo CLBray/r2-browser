@@ -5,14 +5,15 @@ import { prettyJSON } from 'hono/pretty-json'
 
 // Type definitions for Cloudflare Workers environment
 type Bindings = {
-  R2_BUCKET: R2Bucket
-  KV_SESSIONS: KVNamespace
-  ANALYTICS?: AnalyticsEngineDataset
-  JWT_SECRET: string
-  CORS_ORIGINS: string
-  JWT_EXPIRY_HOURS: string
-  MAX_FILE_SIZE_MB: string
-  ENVIRONMENT: string
+    R2_BUCKET: R2Bucket
+    KV_SESSIONS: KVNamespace
+    ANALYTICS?: AnalyticsEngineDataset
+    ASSETS: Fetcher
+    JWT_SECRET: string
+    CORS_ORIGINS: string
+    JWT_EXPIRY_HOURS: string
+    MAX_FILE_SIZE_MB: string
+    ENVIRONMENT: string
 }
 
 // Create Hono app with type bindings
@@ -24,190 +25,231 @@ app.use('*', prettyJSON())
 
 // CORS middleware with dynamic origins
 app.use('*', async (c, next) => {
-  const corsOrigins = c.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-  
-  return cors({
-    origin: corsOrigins,
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  })(c, next)
+    const corsOrigins = c.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+
+    return cors({
+        origin: corsOrigins,
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowHeaders: ['Content-Type', 'Authorization'],
+        credentials: true,
+    })(c, next)
 })
 
 // Health check endpoint
 app.get('/health', (c) => {
-  return c.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    environment: c.env.ENVIRONMENT,
-    version: '1.0.0'
-  })
+    return c.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        environment: c.env.ENVIRONMENT,
+        version: '1.0.0'
+    })
 })
 
 // API root endpoint
-app.get('/', (c) => {
-  return c.json({
-    name: 'R2 File Explorer API',
-    version: '1.0.0',
-    environment: c.env.ENVIRONMENT,
-    endpoints: {
-      health: '/health',
-      auth: '/api/auth',
-      files: '/api/files'
-    }
-  })
+app.get('/api', (c) => {
+    return c.json({
+        name: 'R2 File Explorer API',
+        version: '1.0.0',
+        environment: c.env.ENVIRONMENT,
+        endpoints: {
+            health: '/health',
+            auth: '/api/auth',
+            files: '/api/files'
+        }
+    })
 })
 
 // Authentication routes
 app.post('/api/auth/login', async (c) => {
-  // TODO: Implement authentication logic
-  return c.json({ message: 'Authentication endpoint - to be implemented' })
+    // TODO: Implement authentication logic
+    return c.json({ message: 'Authentication endpoint - to be implemented' })
 })
 
 app.post('/api/auth/logout', async (c) => {
-  // TODO: Implement logout logic
-  return c.json({ message: 'Logout endpoint - to be implemented' })
+    // TODO: Implement logout logic
+    return c.json({ message: 'Logout endpoint - to be implemented' })
 })
 
 app.get('/api/auth/verify', async (c) => {
-  // TODO: Implement token verification
-  return c.json({ message: 'Token verification endpoint - to be implemented' })
+    // TODO: Implement token verification
+    return c.json({ message: 'Token verification endpoint - to be implemented' })
 })
 
 // File operation routes
 app.get('/api/files', async (c) => {
-  try {
-    const bucket = c.env.R2_BUCKET
-    const prefix = c.req.query('prefix') || ''
-    
-    const objects = await bucket.list({ prefix })
-    
-    return c.json({
-      success: true,
-      objects: objects.objects.map(obj => ({
-        key: obj.key,
-        size: obj.size,
-        lastModified: obj.uploaded,
-        etag: obj.etag
-      })),
-      truncated: objects.truncated,
-      ...(objects.truncated && 'cursor' in objects ? { cursor: objects.cursor } : {})
-    })
-  } catch (error) {
-    console.error('Error listing files:', error)
-    return c.json({ 
-      success: false, 
-      error: 'Failed to list files' 
-    }, 500)
-  }
+    try {
+        const bucket = c.env.R2_BUCKET
+        const prefix = c.req.query('prefix') || ''
+
+        const objects = await bucket.list({ prefix })
+
+        return c.json({
+            success: true,
+            objects: objects.objects.map(obj => ({
+                key: obj.key,
+                size: obj.size,
+                lastModified: obj.uploaded,
+                etag: obj.etag
+            })),
+            truncated: objects.truncated,
+            ...(objects.truncated && 'cursor' in objects ? { cursor: objects.cursor } : {})
+        })
+    } catch (error) {
+        console.error('Error listing files:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to list files'
+        }, 500)
+    }
 })
 
 app.post('/api/files/upload', async (c) => {
-  try {
-    const bucket = c.env.R2_BUCKET
-    const maxSizeMB = parseInt(c.env.MAX_FILE_SIZE_MB)
-    
-    // Get file from request
-    const body = await c.req.blob()
-    
-    // Check file size
-    if (body.size > maxSizeMB * 1024 * 1024) {
-      return c.json({
-        success: false,
-        error: `File size exceeds maximum of ${maxSizeMB}MB`
-      }, 413)
+    try {
+        const bucket = c.env.R2_BUCKET
+        const maxSizeMB = parseInt(c.env.MAX_FILE_SIZE_MB)
+
+        // Get file from request
+        const body = await c.req.blob()
+
+        // Check file size
+        if (body.size > maxSizeMB * 1024 * 1024) {
+            return c.json({
+                success: false,
+                error: `File size exceeds maximum of ${maxSizeMB}MB`
+            }, 413)
+        }
+
+        // Get filename from query or generate one
+        const filename = c.req.query('filename') || `upload-${Date.now()}`
+
+        // Upload to R2
+        await bucket.put(filename, body)
+
+        return c.json({
+            success: true,
+            message: 'File uploaded successfully',
+            filename,
+            size: body.size
+        })
+    } catch (error) {
+        console.error('Error uploading file:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to upload file'
+        }, 500)
     }
-    
-    // Get filename from query or generate one
-    const filename = c.req.query('filename') || `upload-${Date.now()}`
-    
-    // Upload to R2
-    await bucket.put(filename, body)
-    
-    return c.json({
-      success: true,
-      message: 'File uploaded successfully',
-      filename,
-      size: body.size
-    })
-  } catch (error) {
-    console.error('Error uploading file:', error)
-    return c.json({
-      success: false,
-      error: 'Failed to upload file'
-    }, 500)
-  }
 })
 
 app.get('/api/files/:filename', async (c) => {
-  try {
-    const bucket = c.env.R2_BUCKET
-    const filename = c.req.param('filename')
-    
-    const object = await bucket.get(filename)
-    
-    if (!object) {
-      return c.json({
-        success: false,
-        error: 'File not found'
-      }, 404)
+    try {
+        const bucket = c.env.R2_BUCKET
+        const filename = c.req.param('filename')
+
+        const object = await bucket.get(filename)
+
+        if (!object) {
+            return c.json({
+                success: false,
+                error: 'File not found'
+            }, 404)
+        }
+
+        return new Response(object.body, {
+            headers: {
+                'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+                'Content-Length': object.size.toString(),
+                'ETag': object.etag,
+                'Last-Modified': object.uploaded.toUTCString()
+            }
+        })
+    } catch (error) {
+        console.error('Error downloading file:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to download file'
+        }, 500)
     }
-    
-    return new Response(object.body, {
-      headers: {
-        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-        'Content-Length': object.size.toString(),
-        'ETag': object.etag,
-        'Last-Modified': object.uploaded.toUTCString()
-      }
-    })
-  } catch (error) {
-    console.error('Error downloading file:', error)
-    return c.json({
-      success: false,
-      error: 'Failed to download file'
-    }, 500)
-  }
 })
 
 app.delete('/api/files/:filename', async (c) => {
-  try {
-    const bucket = c.env.R2_BUCKET
-    const filename = c.req.param('filename')
-    
-    await bucket.delete(filename)
-    
-    return c.json({
-      success: true,
-      message: 'File deleted successfully',
-      filename
-    })
-  } catch (error) {
-    console.error('Error deleting file:', error)
-    return c.json({
-      success: false,
-      error: 'Failed to delete file'
-    }, 500)
-  }
+    try {
+        const bucket = c.env.R2_BUCKET
+        const filename = c.req.param('filename')
+
+        await bucket.delete(filename)
+
+        return c.json({
+            success: true,
+            message: 'File deleted successfully',
+            filename
+        })
+    } catch (error) {
+        console.error('Error deleting file:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to delete file'
+        }, 500)
+    }
 })
 
-// 404 handler
+// Static asset serving for React frontend
+app.get('*', async (c) => {
+    try {
+        // Try to serve the requested static asset
+        const url = new URL(c.req.url)
+        const assetResponse = await c.env.ASSETS.fetch(c.req.raw)
+
+        // If asset found, return it
+        if (assetResponse.status !== 404) {
+            return assetResponse
+        }
+
+        // For SPA routing, serve index.html for non-API routes
+        if (!url.pathname.startsWith('/api/')) {
+            const indexResponse = await c.env.ASSETS.fetch(new Request(new URL('/index.html', c.req.url)))
+            if (indexResponse.status === 200) {
+                return new Response(indexResponse.body, {
+                    headers: {
+                        ...Object.fromEntries(indexResponse.headers),
+                        'Content-Type': 'text/html'
+                    }
+                })
+            }
+        }
+
+        // If no static asset found and not an API route, return 404
+        return c.json({
+            success: false,
+            error: 'Not Found',
+            message: 'The requested resource does not exist'
+        }, 404)
+    } catch (error) {
+        console.error('Error serving static asset:', error)
+        return c.json({
+            success: false,
+            error: 'Internal Server Error',
+            message: 'Failed to serve static asset'
+        }, 500)
+    }
+})
+
+// 404 handler for API routes (this won't be reached due to the catch-all above)
 app.notFound((c) => {
-  return c.json({
-    success: false,
-    error: 'Not Found',
-    message: 'The requested endpoint does not exist'
-  }, 404)
+    return c.json({
+        success: false,
+        error: 'Not Found',
+        message: 'The requested endpoint does not exist'
+    }, 404)
 })
 
 // Error handler
 app.onError((err, c) => {
-  console.error('Unhandled error:', err)
-  return c.json({
-    success: false,
-    error: 'Internal Server Error',
-    message: 'An unexpected error occurred'
-  }, 500)
+    console.error('Unhandled error:', err)
+    return c.json({
+        success: false,
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred'
+    }, 500)
 })
 
 export default app

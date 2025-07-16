@@ -42,26 +42,43 @@ The worker uses the following environment variables (configured in wrangler.toml
 - `MAX_FILE_SIZE_MB`: Maximum file upload size in MB
 - `ENVIRONMENT`: Current environment (development/staging/production)
 
-### 4. Local Development
+### 4. Build Frontend Assets
+
+Before running the worker locally, build the React frontend:
 
 ```bash
-# Start the worker in development mode
+# Build the React frontend
+cd ../frontend
+npm install
+npm run build
+
+# Return to worker directory
+cd ../worker
+```
+
+### 5. Local Development
+
+```bash
+# Start the worker in development mode (serves both API and frontend)
 wrangler dev --local --port 8787
 
 # Or for remote development (uses actual Cloudflare resources)
 wrangler dev --port 8787
 ```
 
-### 5. Testing the Setup
+### 6. Testing the Setup
 
-Once the worker is running, you can test the endpoints:
+Once the worker is running, you can test both the API and frontend:
 
 ```bash
 # Health check
 curl http://localhost:8787/health
 
 # Basic API response
-curl http://localhost:8787/
+curl http://localhost:8787/api
+
+# Frontend (React app)
+open http://localhost:8787
 ```
 
 ## Deployment

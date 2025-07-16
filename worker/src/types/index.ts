@@ -4,6 +4,7 @@ export interface Bindings {
   R2_BUCKET: R2Bucket
   KV_SESSIONS: KVNamespace
   ANALYTICS?: AnalyticsEngineDataset
+  ASSETS: Fetcher
   JWT_SECRET: string
   CORS_ORIGINS: string
   JWT_EXPIRY_HOURS: string
