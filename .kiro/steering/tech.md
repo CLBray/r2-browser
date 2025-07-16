@@ -48,11 +48,15 @@ inclusion: always
 - Graceful network failure handling with retry logic
 
 ## Testing
-- Unit tests for all new functionality
-- Frontend: Jest + React Testing Library
-- Backend: Vitest for Workers
-- Mock external dependencies (R2, KV)
-- Test error scenarios and edge cases
+- **Workers**: Use Cloudflare Workers Vitest integration (`@cloudflare/vitest-pool-workers`)
+- **Unit Tests**: Test individual services and functions with real bindings
+- **Integration Tests**: Test complete API workflows using `SELF` fetcher
+- **Frontend**: Jest + React Testing Library
+- **Isolated Storage**: Each test runs with isolated KV/R2 storage
+- **Real Runtime**: Tests run inside actual Workers runtime via Miniflare
+- **No Mocking**: Use real bindings instead of mocks for Workers tests
+- **Error Scenarios**: Test all error paths and edge cases
+- **Type Safety**: Declare `cloudflare:test` module interfaces for bindings
 
 ## Development Commands
 ```bash

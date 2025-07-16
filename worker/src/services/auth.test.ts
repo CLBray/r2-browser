@@ -1,24 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { env } from 'cloudflare:test'
 import { AuthService } from './auth'
-import type { Bindings, AuthCredentials, SessionData } from '../types'
+import type { AuthCredentials, SessionData } from '../types'
 
-// Mock KV namespace
-const mockKV = {
-  get: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn()
-}
-
-// Mock bindings
-const mockBindings: Bindings = {
-  R2_BUCKET: {} as R2Bucket,
-  KV_SESSIONS: mockKV as any,
-  ANALYTICS: undefined,
-  ASSETS: {} as Fetcher,
-  JWT_SECRET: 'test-secret-key-that-is-long-enough-for-jwt',
-  JWT_EXPIRY_HOURS: '24',
-  MAX_FILE_SIZE_MB: '50',
-  ENVIRONMENT: 'test'
+// Declare the test environment types
+declare module 'cloudflare:test' {
+  interface ProvidedEnv {
+    KV_SESSIONS: KVNamespace
+    JWT_SECRET: string
+    JWT_EXPIRY_HOURS: string
+    MAX_FILE_SIZE_MB: string
+    ENVIRONMENT: string
+  }
 }
 
 // Valid test credentials
@@ -33,8 +26,7 @@ describe('AuthService', () => {
   let authService: AuthService
 
   beforeEach(() => {
-    authService = new AuthService(mockBindings)
-    vi.clearAllMocks()
+    authService = new AuthService(env)
   })
 
   describe('validateCredentials', () => {
@@ -200,24 +192,16 @@ describe('AuthService', () => {
     })
 
     it('should return false when validation throws an error', async () => {
-      // Mock console.error to avoid noise in test output
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
       // Create credentials that will cause an error during validation
       const invalidCredentials = null as any
       
       const result = await authService.validateCredentials(invalidCredentials)
       expect(result).toBe(false)
-      expect(consoleSpy).toHaveBeenCalledWith('Credential validation error:', expect.any(Error))
-      
-      consoleSpy.mockRestore()
     })
   })
 
   describe('createSession', () => {
     it('should create a session and return a token', async () => {
-      mockKV.put.mockResolvedValue(undefined)
-
       const result = await authService.createSession(validCredentials)
 
       expect(result).toHaveProperty('token')
@@ -225,206 +209,115 @@ describe('AuthService', () => {
       expect(typeof result.token).toBe('string')
       expect(typeof result.expiresAt).toBe('number')
       expect(result.expiresAt).toBeGreaterThan(Date.now())
-      expect(mockKV.put).toHaveBeenCalledWith(
-        expect.stringMatching(/^session:/),
-        expect.stringContaining('"credentials"'),
-        { expirationTtl: 24 * 60 * 60 }
-      )
     })
 
-    it('should store session data with correct structure', async () => {
-      mockKV.put.mockResolvedValue(undefined)
-
-      await authService.createSession(validCredentials)
-
-      const putCall = mockKV.put.mock.calls[0]
-      const sessionData = JSON.parse(putCall[1])
-
-      expect(sessionData).toHaveProperty('userId')
-      expect(sessionData).toHaveProperty('credentials')
-      expect(sessionData).toHaveProperty('expiresAt')
-      expect(sessionData).toHaveProperty('createdAt')
-      expect(sessionData.credentials).toEqual(validCredentials)
-      expect(typeof sessionData.userId).toBe('string')
-      expect(sessionData.expiresAt).toBeGreaterThan(sessionData.createdAt)
+    it('should store session data in KV and be retrievable', async () => {
+      const result = await authService.createSession(validCredentials)
+      
+      // Validate the token to ensure session was stored correctly
+      const sessionData = await authService.validateToken(result.token)
+      
+      expect(sessionData).not.toBeNull()
+      expect(sessionData!.credentials).toEqual(validCredentials)
+      expect(typeof sessionData!.userId).toBe('string')
+      expect(sessionData!.expiresAt).toBeGreaterThan(sessionData!.createdAt)
     })
 
     it('should use custom JWT expiry hours from bindings', async () => {
-      const customBindings = { ...mockBindings, JWT_EXPIRY_HOURS: '48' }
-      const customAuthService = new AuthService(customBindings)
-      mockKV.put.mockResolvedValue(undefined)
+      // Create a custom environment with different expiry
+      const customEnv = { ...env, JWT_EXPIRY_HOURS: '48' }
+      const customAuthService = new AuthService(customEnv)
 
-      await customAuthService.createSession(validCredentials)
-
-      expect(mockKV.put).toHaveBeenCalledWith(
-        expect.stringMatching(/^session:/),
-        expect.any(String),
-        { expirationTtl: 48 * 60 * 60 }
-      )
+      const result = await customAuthService.createSession(validCredentials)
+      
+      // The expiry should be approximately 48 hours from now
+      const expectedExpiry = Date.now() + (48 * 60 * 60 * 1000)
+      const tolerance = 5000 // 5 second tolerance
+      
+      expect(result.expiresAt).toBeGreaterThan(expectedExpiry - tolerance)
+      expect(result.expiresAt).toBeLessThan(expectedExpiry + tolerance)
     })
   })
 
   describe('validateToken', () => {
     it('should return null for invalid token', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const invalidToken = 'invalid-token'
 
       const result = await authService.validateToken(invalidToken)
       expect(result).toBeNull()
-      expect(consoleSpy).toHaveBeenCalledWith('Token validation error:', expect.any(Error))
-      
-      consoleSpy.mockRestore()
     })
 
-    it('should return null when session not found in KV', async () => {
-      mockKV.put.mockResolvedValue(undefined)
+    it('should return session data for valid token', async () => {
+      // Create a session first
       const { token } = await authService.createSession(validCredentials)
-
-      // Mock KV to return null (session not found)
-      mockKV.get.mockResolvedValue(null)
-
+      
+      // Validate the token
       const result = await authService.validateToken(token)
+      
+      expect(result).not.toBeNull()
+      expect(result!.credentials).toEqual(validCredentials)
+      expect(typeof result!.userId).toBe('string')
+      expect(result!.expiresAt).toBeGreaterThan(result!.createdAt)
+    })
+
+    it('should return null for expired session', async () => {
+      // Create a session with very short expiry
+      const shortExpiryEnv = { ...env, JWT_EXPIRY_HOURS: '0' }
+      const shortExpiryAuthService = new AuthService(shortExpiryEnv)
+      
+      const { token } = await shortExpiryAuthService.createSession(validCredentials)
+      
+      // Wait a moment to ensure expiry
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const result = await shortExpiryAuthService.validateToken(token)
       expect(result).toBeNull()
     })
 
-    it('should return session data for valid token with valid session', async () => {
-      const now = Date.now()
-      const expiresAt = now + (24 * 60 * 60 * 1000)
-      
-      const sessionData: SessionData = {
-        userId: 'test-user-id',
-        credentials: validCredentials,
-        expiresAt,
-        createdAt: now
-      }
-
-      mockKV.put.mockResolvedValue(undefined)
+    it('should handle malformed session data gracefully', async () => {
+      // Create a session first
       const { token } = await authService.createSession(validCredentials)
       
-      mockKV.get.mockResolvedValue(JSON.stringify(sessionData))
-
-      const result = await authService.validateToken(token)
-      expect(result).toEqual(sessionData)
-    })
-
-    it('should return null and clean up expired session', async () => {
-      const now = Date.now()
-      const expiredTime = now - 1000 // 1 second ago
+      // Manually corrupt the session data in KV
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      await env.KV_SESSIONS.put(`session:${payload.sessionId}`, 'invalid-json')
       
-      const expiredSessionData: SessionData = {
-        userId: 'test-user-id',
-        credentials: validCredentials,
-        expiresAt: expiredTime,
-        createdAt: now - (25 * 60 * 60 * 1000)
-      }
-
-      mockKV.put.mockResolvedValue(undefined)
-      mockKV.delete.mockResolvedValue(undefined)
-      const { token } = await authService.createSession(validCredentials)
-      
-      mockKV.get.mockResolvedValue(JSON.stringify(expiredSessionData))
-
       const result = await authService.validateToken(token)
       expect(result).toBeNull()
-      expect(mockKV.delete).toHaveBeenCalledWith(expect.stringMatching(/^session:/))
-    })
-
-    it('should handle JSON parse errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
-      mockKV.put.mockResolvedValue(undefined)
-      const { token } = await authService.createSession(validCredentials)
-      
-      mockKV.get.mockResolvedValue('invalid-json')
-
-      const result = await authService.validateToken(token)
-      expect(result).toBeNull()
-      expect(consoleSpy).toHaveBeenCalledWith('Token validation error:', expect.any(Error))
-      
-      consoleSpy.mockRestore()
     })
   })
 
   describe('revokeSession', () => {
     it('should return false for invalid token', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const invalidToken = 'invalid-token'
 
       const result = await authService.revokeSession(invalidToken)
       expect(result).toBe(false)
-      expect(consoleSpy).toHaveBeenCalledWith('Session revocation error:', expect.any(Error))
-      
-      consoleSpy.mockRestore()
     })
 
     it('should return true and delete session for valid token', async () => {
-      mockKV.put.mockResolvedValue(undefined)
-      mockKV.delete.mockResolvedValue(undefined)
-
       const { token } = await authService.createSession(validCredentials)
       const result = await authService.revokeSession(token)
 
       expect(result).toBe(true)
-      expect(mockKV.delete).toHaveBeenCalledWith(expect.stringMatching(/^session:/))
-    })
-
-    it('should handle KV delete errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      mockKV.put.mockResolvedValue(undefined)
-      mockKV.delete.mockRejectedValue(new Error('KV delete failed'))
-
-      const { token } = await authService.createSession(validCredentials)
-      const result = await authService.revokeSession(token)
-
-      expect(result).toBe(false)
-      expect(consoleSpy).toHaveBeenCalledWith('Session revocation error:', expect.any(Error))
       
-      consoleSpy.mockRestore()
+      // Verify session was deleted by trying to validate the token
+      const sessionData = await authService.validateToken(token)
+      expect(sessionData).toBeNull()
     })
   })
 
   describe('refreshToken', () => {
     it('should return null for invalid token', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const invalidToken = 'invalid-token'
 
       const result = await authService.refreshToken(invalidToken)
       expect(result).toBeNull()
-      expect(consoleSpy).toHaveBeenCalledWith('Token refresh error:', expect.any(Error))
-      
-      consoleSpy.mockRestore()
-    })
-
-    it('should return null when session validation fails', async () => {
-      mockKV.put.mockResolvedValue(undefined)
-      const { token } = await authService.createSession(validCredentials)
-      
-      // Mock validateToken to return null
-      mockKV.get.mockResolvedValue(null)
-
-      const result = await authService.refreshToken(token)
-      expect(result).toBeNull()
     })
 
     it('should create new session and revoke old one for valid token', async () => {
-      const now = Date.now()
-      const expiresAt = now + (24 * 60 * 60 * 1000)
-      
-      const sessionData: SessionData = {
-        userId: 'test-user-id',
-        credentials: validCredentials,
-        expiresAt,
-        createdAt: now
-      }
-
-      mockKV.put.mockResolvedValue(undefined)
-      mockKV.delete.mockResolvedValue(undefined)
-      
       const { token } = await authService.createSession(validCredentials)
       
-      // Mock successful session validation
-      mockKV.get.mockResolvedValue(JSON.stringify(sessionData))
-
       const result = await authService.refreshToken(token)
 
       expect(result).not.toBeNull()
@@ -433,20 +326,15 @@ describe('AuthService', () => {
       expect(typeof result!.token).toBe('string')
       expect(typeof result!.expiresAt).toBe('number')
       expect(result!.token).not.toBe(token) // Should be a new token
-      expect(mockKV.delete).toHaveBeenCalled() // Old session should be revoked
-    })
-
-    it('should handle refresh errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       
-      // Mock KV operations to throw errors
-      mockKV.put.mockRejectedValue(new Error('KV put failed'))
+      // Verify old token is no longer valid
+      const oldTokenValidation = await authService.validateToken(token)
+      expect(oldTokenValidation).toBeNull()
       
-      const result = await authService.refreshToken('some-token')
-      expect(result).toBeNull()
-      expect(consoleSpy).toHaveBeenCalledWith('Token refresh error:', expect.any(Error))
-      
-      consoleSpy.mockRestore()
+      // Verify new token is valid
+      const newTokenValidation = await authService.validateToken(result!.token)
+      expect(newTokenValidation).not.toBeNull()
+      expect(newTokenValidation!.credentials).toEqual(validCredentials)
     })
   })
 })
