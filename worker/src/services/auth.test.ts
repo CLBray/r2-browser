@@ -268,7 +268,7 @@ describe('AuthService', () => {
       const { token } = await shortExpiryAuthService.createSession(validCredentials)
       
       // Wait a moment to ensure expiry
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       const result = await shortExpiryAuthService.validateToken(token)
       console.error('Message:', result)
