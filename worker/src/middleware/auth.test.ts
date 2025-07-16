@@ -60,7 +60,7 @@ describe('Auth Middleware Integration Tests', () => {
       expect(response.status).toBe(401)
       expect(data.success).toBe(false)
       expect(data.error).toBe('Unauthorized')
-      expect(data.message).toBe('Invalid or expired token')
+      expect(data.message).toBe('Missing or invalid authorization header')
     })
 
     it('should return 401 for invalid token', async () => {
