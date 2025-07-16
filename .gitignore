@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 /target/
+/worker/target/
 
 # Build outputs
 dist/

@@ -19,30 +19,30 @@ preview_id = "session-storage-namespace-preview"
 
 # Development environment variables
 [vars]
-JWT_SECRET = "dev-jwt-secret-change-in-production"
-CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+JWT_SECRET = "dev-secret-key-for-local-development-only-not-secure"
+CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
 JWT_EXPIRY_HOURS = "24"
-MAX_FILE_SIZE_MB = "100"
+MAX_FILE_SIZE_MB = "50"
 ENVIRONMENT = "development"
-
-# Production environment configuration
-[env.production]
-name = "r2-file-explorer-api-prod"
-
-[env.production.vars]
-JWT_SECRET = "production-jwt-secret-change-this"
-CORS_ORIGINS = "https://your-production-domain.pages.dev"
-JWT_EXPIRY_HOURS = "8"
-MAX_FILE_SIZE_MB = "500"
-ENVIRONMENT = "production"
 
 # Staging environment configuration
 [env.staging]
 name = "r2-file-explorer-api-staging"
 
 [env.staging.vars]
-JWT_SECRET = "staging-jwt-secret-change-this"
-CORS_ORIGINS = "https://staging-domain.pages.dev"
+JWT_SECRET = "REPLACE_WITH_SECURE_STAGING_SECRET"
+CORS_ORIGINS = "https://r2-file-explorer-staging.pages.dev"
 JWT_EXPIRY_HOURS = "12"
-MAX_FILE_SIZE_MB = "200"
+MAX_FILE_SIZE_MB = "100"
 ENVIRONMENT = "staging"
+
+# Production environment configuration
+[env.production]
+name = "r2-file-explorer-api-prod"
+
+[env.production.vars]
+JWT_SECRET = "REPLACE_WITH_SECURE_PRODUCTION_SECRET"
+CORS_ORIGINS = "https://r2-file-explorer.pages.dev"
+JWT_EXPIRY_HOURS = "8"
+MAX_FILE_SIZE_MB = "200"
+ENVIRONMENT = "production"
