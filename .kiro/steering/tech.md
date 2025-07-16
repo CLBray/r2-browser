@@ -1,63 +1,63 @@
-# Technology Stack
+---
+inclusion: always
+---
 
-## Frontend
-- **Framework**: React 18 with TypeScript
-- **Routing**: React Router for navigation
-- **State Management**: React Query for API state and caching
-- **Styling**: Tailwind CSS
-- **File Uploads**: React Dropzone
-- **HTTP Client**: Fetch API
+# Technology Stack & Development Guidelines
 
-## Backend
-- **Runtime**: Cloudflare Workers
-- **Language**: JavaScript/TypeScript with Hono framework
-- **Storage**: Direct R2 bindings (no S3 SDK needed)
-- **Session Storage**: Cloudflare KV
-- **Authentication**: JWT tokens
+## Core Technologies
+- **Frontend**: React 18 + TypeScript, Tailwind CSS, React Query
+- **Backend**: Cloudflare Workers with Hono framework, TypeScript
+- **Storage**: Cloudflare R2 (direct bindings only), Cloudflare KV for sessions
+- **Authentication**: JWT tokens with KV-based session storage
 
-## Infrastructure
-- **Compute**: Cloudflare Workers (serverless, global edge)
-- **Storage**: Cloudflare R2 for object storage
-- **Session Management**: Cloudflare KV
-- **Frontend Hosting**: Cloudflare Workers with Static Assets
-- **CDN**: Cloudflare global network
+## Code Standards
 
-## Development Tools
-- **Local Development**: Wrangler CLI for Workers development
-- **Package Manager**: npm/yarn for both frontend and backend
-- **Testing**: Jest + React Testing Library (frontend), Vitest (backend)
+### TypeScript
+- Use strict TypeScript with proper type definitions
+- Define interfaces in `types/` directories
+- Never use `any` - create explicit types
+- Export types from dedicated index files
 
-## Observability
-- **API Observability**: Workers Analytics Engine for data points
+### Backend Architecture (Hono + Workers)
+- Handlers in `handlers/` directory, organized by feature
+- Business logic in `services/` directory
+- Use Hono's built-in middleware (CORS, JWT, error handling)
+- Direct R2 bindings only - no S3 SDK compatibility
+- Stream large file operations
+- Validate all inputs with proper error responses
+
+### Frontend Architecture (React)
+- Components in `components/` directory by feature
+- Custom hooks in `hooks/` directory
+- API calls centralized in `services/` directory
+- React Query for server state and caching
+- Error boundaries for graceful failures
+
+## Security & Performance
+- Never store credentials in browser storage
+- JWT sessions with KV storage backend
+- Proper CORS headers for cross-origin requests
+- Streaming uploads for large files
+- Virtual scrolling for large lists
+- Bundle optimization with tree shaking
+
+## Error Handling
+- Consistent format: `{ error: string, code?: string }`
+- User-friendly messages in frontend
+- No sensitive data in logs
+- Graceful network failure handling with retry logic
 
 ## Testing
-- **Testing**: Local unit tests are created as functionality is modified
+- Unit tests for all new functionality
+- Frontend: Jest + React Testing Library
+- Backend: Vitest for Workers
+- Mock external dependencies (R2, KV)
+- Test error scenarios and edge cases
 
-## Common Commands
-
-### Development
+## Development Commands
 ```bash
-# Start local development
-wrangler dev                    # Start Worker locally
-npm run dev                     # Start React dev server
-
-# Build
-npm run build                   # Build frontend
-wrangler publish               # Deploy Worker
-
-# Testing
-npm test                       # Run frontend tests
-npm run test:worker            # Run Worker tests
+wrangler dev        # Start Worker with hot reload
+npm run dev         # Start React dev server
+npm test           # Run all tests
+npm run test:watch # Watch mode
 ```
-
-### Deployment
-```bash
-# Build frontend and deploy Worker with static assets
-cd frontend && npm run build
-cd ../worker && wrangler deploy --env production
-```
-
-## Configuration Files
-- `wrangler.toml` - Worker configuration and bindings
-- `package.json` - Frontend and Worker dependencies and scripts
-- `tsconfig.json` - TypeScript configuration
