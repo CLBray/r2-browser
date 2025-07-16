@@ -2,16 +2,16 @@ name = "r2-file-explorer-api"
 main = "pkg/r2_file_explorer_worker.js"
 compatibility_date = "2024-01-01"
 
-# R2 bucket binding for file storage
+# Development R2 bucket binding for file storage
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "file-explorer-storage"
+bucket_name = "file-explorer-storage-dev"
 
-# KV namespace for session storage
+# Development KV namespace for session storage
 [[kv_namespaces]]
 binding = "KV_SESSIONS"
-id = "session-storage-namespace"
-preview_id = "session-storage-namespace-preview"
+id = "file-explorer-sessions-dev"
+preview_id = "file-explorer-sessions-dev-preview"
 
 # Analytics Engine binding for observability (disabled in local dev)
 # [[analytics_engine_datasets]]
@@ -29,6 +29,21 @@ ENVIRONMENT = "development"
 [env.staging]
 name = "r2-file-explorer-api-staging"
 
+# Staging R2 bucket binding
+[[env.staging.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "file-explorer-storage-staging"
+
+# Staging KV namespace binding
+[[env.staging.kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "file-explorer-sessions-staging"
+preview_id = "file-explorer-sessions-staging-preview"
+
+# Staging Analytics Engine binding
+[[env.staging.analytics_engine_datasets]]
+binding = "ANALYTICS"
+
 [env.staging.vars]
 JWT_SECRET = "REPLACE_WITH_SECURE_STAGING_SECRET"
 CORS_ORIGINS = "https://r2-file-explorer-staging.pages.dev"
@@ -39,6 +54,21 @@ ENVIRONMENT = "staging"
 # Production environment configuration
 [env.production]
 name = "r2-file-explorer-api-prod"
+
+# Production R2 bucket binding
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "file-explorer-storage-prod"
+
+# Production KV namespace binding
+[[env.production.kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "file-explorer-sessions-prod"
+preview_id = "file-explorer-sessions-prod-preview"
+
+# Production Analytics Engine binding
+[[env.production.analytics_engine_datasets]]
+binding = "ANALYTICS"
 
 [env.production.vars]
 JWT_SECRET = "REPLACE_WITH_SECURE_PRODUCTION_SECRET"
