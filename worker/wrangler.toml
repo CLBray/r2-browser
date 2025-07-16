@@ -18,9 +18,9 @@ binding = "KV_SESSIONS"
 id = "file-explorer-sessions-dev"
 preview_id = "file-explorer-sessions-dev-preview"
 
-# Analytics Engine binding for observability (disabled in local dev)
-# [[analytics_engine_datasets]]
-# binding = "ANALYTICS"
+# Analytics Engine binding for observability
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
 
 # Development environment variables
 [vars]

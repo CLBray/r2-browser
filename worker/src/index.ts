@@ -36,7 +36,16 @@ app.use('*', async (c, next) => {
 })
 
 // Health check endpoint
-app.get('/health', (c) => {
+app.get('/health', async (c) => {
+    // Track health check analytics
+    if (c.env.ANALYTICS) {
+        c.env.ANALYTICS.writeDataPoint({
+            blobs: ['health_check'],
+            doubles: [1],
+            indexes: [c.env.ENVIRONMENT]
+        })
+    }
+
     return c.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -83,6 +92,15 @@ app.get('/api/files', async (c) => {
 
         const objects = await bucket.list({ prefix })
 
+        // Track file listing analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_list'],
+                doubles: [objects.objects.length],
+                indexes: [c.env.ENVIRONMENT, prefix || 'root']
+            })
+        }
+
         return c.json({
             success: true,
             objects: objects.objects.map(obj => ({
@@ -96,6 +114,16 @@ app.get('/api/files', async (c) => {
         })
     } catch (error) {
         console.error('Error listing files:', error)
+        
+        // Track error analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_list_error'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
+            })
+        }
+
         return c.json({
             success: false,
             error: 'Failed to list files'
@@ -113,6 +141,15 @@ app.post('/api/files/upload', async (c) => {
 
         // Check file size
         if (body.size > maxSizeMB * 1024 * 1024) {
+            // Track file size exceeded analytics
+            if (c.env.ANALYTICS) {
+                c.env.ANALYTICS.writeDataPoint({
+                    blobs: ['file_upload_size_exceeded'],
+                    doubles: [body.size / (1024 * 1024)], // Size in MB
+                    indexes: [c.env.ENVIRONMENT, maxSizeMB.toString()]
+                })
+            }
+
             return c.json({
                 success: false,
                 error: `File size exceeds maximum of ${maxSizeMB}MB`
@@ -125,6 +162,15 @@ app.post('/api/files/upload', async (c) => {
         // Upload to R2
         await bucket.put(filename, body)
 
+        // Track successful file upload analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_upload_success'],
+                doubles: [body.size / (1024 * 1024)], // Size in MB
+                indexes: [c.env.ENVIRONMENT, filename.split('.').pop() || 'unknown'] // File extension
+            })
+        }
+
         return c.json({
             success: true,
             message: 'File uploaded successfully',
@@ -133,6 +179,16 @@ app.post('/api/files/upload', async (c) => {
         })
     } catch (error) {
         console.error('Error uploading file:', error)
+
+        // Track upload error analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_upload_error'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
+            })
+        }
+
         return c.json({
             success: false,
             error: 'Failed to upload file'
