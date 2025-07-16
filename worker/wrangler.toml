@@ -1,5 +1,5 @@
 name = "r2-file-explorer-api"
-main = "src/index.js"
+main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 # Development R2 bucket binding for file storage

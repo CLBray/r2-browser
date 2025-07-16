@@ -23,7 +23,7 @@ A web-based file management application that provides a familiar desktop file ma
 
 ### Backend
 - **Runtime**: Cloudflare Workers
-- **Language**: Rust with worker-rs framework
+- **Language**: JavaScript/TypeScript with Hono framework
 - **Storage**: Direct R2 bindings (no S3 SDK needed)
 - **Session Storage**: Cloudflare KV
 - **Authentication**: JWT tokens
@@ -41,14 +41,15 @@ r2-file-explorer/
 │   │   └── utils/             # Helper functions
 │   ├── public/                # Static assets
 │   └── package.json           # Frontend dependencies
-├── worker/                    # Cloudflare Worker (Rust)
+├── worker/                    # Cloudflare Worker (JavaScript/TypeScript)
 │   ├── src/
-│   │   ├── lib.rs             # Main Worker entry point
+│   │   ├── index.ts           # Main Worker entry point
 │   │   ├── handlers/          # Request handlers
 │   │   ├── services/          # Business logic services
-│   │   ├── models/            # Data structures
+│   │   ├── types/             # TypeScript type definitions
 │   │   └── utils/             # Helper functions
-│   ├── Cargo.toml             # Rust dependencies
+│   ├── package.json           # Worker dependencies
+│   ├── tsconfig.json          # TypeScript configuration
 │   └── wrangler.toml          # Worker configuration
 └── README.md                  # Project documentation
 ```
@@ -58,7 +59,6 @@ r2-file-explorer/
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Rust and Cargo
 - Wrangler CLI (`npm install -g wrangler`)
 - Cloudflare account with R2 and Workers enabled
 
@@ -99,9 +99,11 @@ npm run lint                   # Run ESLint
 
 ### Worker
 ```bash
-wrangler dev                   # Start local development
+npm install                    # Install dependencies
+npm run dev                    # Start local development
+npm run type-check             # Check TypeScript types
+npm test                       # Run tests
 wrangler publish               # Deploy to production
-cargo test                     # Run Rust tests
 ```
 
 ## Deployment

@@ -1,0 +1,213 @@
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
+import { prettyJSON } from 'hono/pretty-json'
+
+// Type definitions for Cloudflare Workers environment
+type Bindings = {
+  R2_BUCKET: R2Bucket
+  KV_SESSIONS: KVNamespace
+  ANALYTICS?: AnalyticsEngineDataset
+  JWT_SECRET: string
+  CORS_ORIGINS: string
+  JWT_EXPIRY_HOURS: string
+  MAX_FILE_SIZE_MB: string
+  ENVIRONMENT: string
+}
+
+// Create Hono app with type bindings
+const app = new Hono<{ Bindings: Bindings }>()
+
+// Global middleware
+app.use('*', logger())
+app.use('*', prettyJSON())
+
+// CORS middleware with dynamic origins
+app.use('*', async (c, next) => {
+  const corsOrigins = c.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+  
+  return cors({
+    origin: corsOrigins,
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })(c, next)
+})
+
+// Health check endpoint
+app.get('/health', (c) => {
+  return c.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: c.env.ENVIRONMENT,
+    version: '1.0.0'
+  })
+})
+
+// API root endpoint
+app.get('/', (c) => {
+  return c.json({
+    name: 'R2 File Explorer API',
+    version: '1.0.0',
+    environment: c.env.ENVIRONMENT,
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth',
+      files: '/api/files'
+    }
+  })
+})
+
+// Authentication routes
+app.post('/api/auth/login', async (c) => {
+  // TODO: Implement authentication logic
+  return c.json({ message: 'Authentication endpoint - to be implemented' })
+})
+
+app.post('/api/auth/logout', async (c) => {
+  // TODO: Implement logout logic
+  return c.json({ message: 'Logout endpoint - to be implemented' })
+})
+
+app.get('/api/auth/verify', async (c) => {
+  // TODO: Implement token verification
+  return c.json({ message: 'Token verification endpoint - to be implemented' })
+})
+
+// File operation routes
+app.get('/api/files', async (c) => {
+  try {
+    const bucket = c.env.R2_BUCKET
+    const prefix = c.req.query('prefix') || ''
+    
+    const objects = await bucket.list({ prefix })
+    
+    return c.json({
+      success: true,
+      objects: objects.objects.map(obj => ({
+        key: obj.key,
+        size: obj.size,
+        lastModified: obj.uploaded,
+        etag: obj.etag
+      })),
+      truncated: objects.truncated,
+      ...(objects.truncated && 'cursor' in objects ? { cursor: objects.cursor } : {})
+    })
+  } catch (error) {
+    console.error('Error listing files:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Failed to list files' 
+    }, 500)
+  }
+})
+
+app.post('/api/files/upload', async (c) => {
+  try {
+    const bucket = c.env.R2_BUCKET
+    const maxSizeMB = parseInt(c.env.MAX_FILE_SIZE_MB)
+    
+    // Get file from request
+    const body = await c.req.blob()
+    
+    // Check file size
+    if (body.size > maxSizeMB * 1024 * 1024) {
+      return c.json({
+        success: false,
+        error: `File size exceeds maximum of ${maxSizeMB}MB`
+      }, 413)
+    }
+    
+    // Get filename from query or generate one
+    const filename = c.req.query('filename') || `upload-${Date.now()}`
+    
+    // Upload to R2
+    await bucket.put(filename, body)
+    
+    return c.json({
+      success: true,
+      message: 'File uploaded successfully',
+      filename,
+      size: body.size
+    })
+  } catch (error) {
+    console.error('Error uploading file:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to upload file'
+    }, 500)
+  }
+})
+
+app.get('/api/files/:filename', async (c) => {
+  try {
+    const bucket = c.env.R2_BUCKET
+    const filename = c.req.param('filename')
+    
+    const object = await bucket.get(filename)
+    
+    if (!object) {
+      return c.json({
+        success: false,
+        error: 'File not found'
+      }, 404)
+    }
+    
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Content-Length': object.size.toString(),
+        'ETag': object.etag,
+        'Last-Modified': object.uploaded.toUTCString()
+      }
+    })
+  } catch (error) {
+    console.error('Error downloading file:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to download file'
+    }, 500)
+  }
+})
+
+app.delete('/api/files/:filename', async (c) => {
+  try {
+    const bucket = c.env.R2_BUCKET
+    const filename = c.req.param('filename')
+    
+    await bucket.delete(filename)
+    
+    return c.json({
+      success: true,
+      message: 'File deleted successfully',
+      filename
+    })
+  } catch (error) {
+    console.error('Error deleting file:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to delete file'
+    }, 500)
+  }
+})
+
+// 404 handler
+app.notFound((c) => {
+  return c.json({
+    success: false,
+    error: 'Not Found',
+    message: 'The requested endpoint does not exist'
+  }, 404)
+})
+
+// Error handler
+app.onError((err, c) => {
+  console.error('Unhandled error:', err)
+  return c.json({
+    success: false,
+    error: 'Internal Server Error',
+    message: 'An unexpected error occurred'
+  }, 500)
+})
+
+export default app

@@ -2,32 +2,34 @@
 
 ## Prerequisites
 
-1. **Rust and Cargo**: Install via rustup (recommended) or your system package manager
-2. **Wrangler CLI**: Install globally with `npm install -g wrangler`
-3. **wasm-pack**: Install with `cargo install wasm-pack`
-4. **WebAssembly target**: Add with `rustup target add wasm32-unknown-unknown`
+1. **Node.js 18+**: Install via nvm, homebrew, or official installer
+2. **npm or yarn**: Package manager (comes with Node.js)
+3. **Wrangler CLI**: Install globally with `npm install -g wrangler`
 
 ## Development Setup
 
 ### 1. Install Dependencies
 
 ```bash
-# Install Rust dependencies
-cargo build
+# Install Worker dependencies
+npm install
 
-# Install wasm-pack if not already installed
-cargo install wasm-pack
-
-# Add WebAssembly target
-rustup target add wasm32-unknown-unknown
+# Install Wrangler CLI globally if not already installed
+npm install -g wrangler
 ```
 
 ### 2. Configure Cloudflare Resources
 
 Before running the worker locally, you need to create the required Cloudflare resources:
 
-1. **R2 Bucket**: Create a bucket named `file-explorer-storage` in your Cloudflare dashboard
-2. **KV Namespace**: Create a KV namespace for session storage
+1. **R2 Buckets**: Create environment-specific buckets:
+   - `file-explorer-storage-dev` (development)
+   - `file-explorer-storage-staging` (staging)
+   - `file-explorer-storage-prod` (production)
+2. **KV Namespaces**: Create environment-specific KV namespaces:
+   - `file-explorer-sessions-dev` (development)
+   - `file-explorer-sessions-staging` (staging)
+   - `file-explorer-sessions-prod` (production)
 3. **Update wrangler.toml**: Replace the placeholder IDs with your actual resource IDs
 
 ### 3. Environment Variables
@@ -74,23 +76,43 @@ wrangler publish --env staging
 wrangler publish --env production
 ```
 
+## Development Commands
+
+```bash
+# Type checking
+npm run type-check
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Deploy to specific environments
+npm run deploy:staging
+npm run deploy:production
+```
+
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"No loader is configured for .rs files"**: This indicates wrangler needs to build the Rust code to WebAssembly first
-2. **"wasm32-unknown-unknown target not found"**: Install the WebAssembly target with `rustup target add wasm32-unknown-unknown`
-3. **Resource binding errors**: Ensure your R2 bucket and KV namespace exist and the IDs in wrangler.toml are correct
+1. **TypeScript compilation errors**: Run `npm run type-check` to identify and fix type issues
+2. **Resource binding errors**: Ensure your R2 bucket and KV namespace exist and the IDs in wrangler.toml are correct
+3. **CORS issues**: Check that your frontend URL is included in the `CORS_ORIGINS` environment variable
+4. **Authentication errors**: Verify that `JWT_SECRET` is properly configured for your environment
 
 ### Build Process
 
-For Rust Workers, the build process is:
-1. Rust code → WebAssembly (via wasm-pack or cargo)
-2. WebAssembly → Worker bundle (via wrangler)
+For JavaScript/TypeScript Workers with Hono:
+1. TypeScript code → JavaScript (via esbuild in wrangler)
+2. JavaScript → Worker bundle (via wrangler)
 
 If you encounter build issues, try:
 ```bash
-# Clean build
-cargo clean
-wrangler build --env development
+# Check TypeScript compilation
+npm run type-check
+
+# Clear wrangler cache
+wrangler dev --local --port 8787
 ```

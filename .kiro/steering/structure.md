@@ -17,14 +17,15 @@ r2-file-explorer/
 │   │   └── utils/             # Helper functions
 │   ├── public/                # Static assets
 │   └── package.json           # Frontend dependencies
-├── worker/                    # Cloudflare Worker (Rust)
+├── worker/                    # Cloudflare Worker (JavaScript/TypeScript)
 │   ├── src/
-│   │   ├── lib.rs             # Main Worker entry point
+│   │   ├── index.ts           # Main Worker entry point
 │   │   ├── handlers/          # Request handlers
 │   │   ├── services/          # Business logic services
-│   │   ├── models/            # Data structures
+│   │   ├── models/            # Data structures and types
 │   │   └── utils/             # Helper functions
-│   ├── Cargo.toml             # Rust dependencies
+│   ├── package.json           # Worker dependencies
+│   ├── tsconfig.json          # TypeScript configuration
 │   └── wrangler.toml          # Worker configuration
 └── README.md                  # Project documentation
 ```
@@ -41,12 +42,12 @@ r2-file-explorer/
 
 ## Backend Service Architecture
 
-- **Router**: Request routing and middleware
-- **AuthHandler**: Authentication and session management
-- **FileHandler**: File operation endpoints
+- **Hono App**: Main application with routing and middleware
+- **AuthHandler**: Authentication and session management with Hono JWT middleware
+- **FileHandler**: File operation endpoints using Hono routes
 - **R2Service**: Direct R2 bucket operations
-- **S3Service**: S3-compatible API client (fallback)
-- **AuthService**: JWT and session management
+- **AuthService**: JWT and session management with KV storage
+- **Middleware**: CORS, authentication, error handling, and logging
 
 ## Key Conventions
 

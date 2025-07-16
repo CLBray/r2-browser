@@ -10,7 +10,7 @@
 
 ## Backend
 - **Runtime**: Cloudflare Workers
-- **Language**: Rust with worker-rs framework
+- **Language**: JavaScript/TypeScript with Hono framework
 - **Storage**: Direct R2 bindings (no S3 SDK needed)
 - **Session Storage**: Cloudflare KV
 - **Authentication**: JWT tokens
@@ -24,8 +24,8 @@
 
 ## Development Tools
 - **Local Development**: Wrangler CLI for Workers development
-- **Package Manager**: npm/yarn for frontend, Cargo for Rust
-- **Testing**: Jest + React Testing Library (frontend), Rust test framework (backend)
+- **Package Manager**: npm/yarn for both frontend and backend
+- **Testing**: Jest + React Testing Library (frontend), Vitest (backend)
 
 ## Observability
 - **API Observability**: Workers Analytics Engine for data points
@@ -44,7 +44,7 @@ wrangler publish               # Deploy Worker
 
 # Testing
 npm test                       # Run frontend tests
-cargo test                     # Run Rust tests
+npm run test:worker            # Run Worker tests
 ```
 
 ### Deployment
@@ -56,5 +56,5 @@ npm run build && npm run deploy
 
 ## Configuration Files
 - `wrangler.toml` - Worker configuration and bindings
-- `package.json` - Frontend dependencies and scripts
-- `Cargo.toml` - Rust dependencies and metadata
+- `package.json` - Frontend and Worker dependencies and scripts
+- `tsconfig.json` - TypeScript configuration
