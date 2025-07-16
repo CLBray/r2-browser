@@ -18,10 +18,10 @@ binding = "KV_SESSIONS"
 id = "file-explorer-sessions-dev"
 preview_id = "file-explorer-sessions-dev-preview"
 
-# Analytics Engine binding for observability
+# Development Analytics Engine binding for observability
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
-dataset = "r2_file_explorer_analytics"
+dataset = "r2_file_explorer_analytics_dev"
 
 # Development environment variables
 [vars]
@@ -49,7 +49,7 @@ preview_id = "file-explorer-sessions-staging-preview"
 # Staging Analytics Engine binding
 [[env.staging.analytics_engine_datasets]]
 binding = "ANALYTICS"
-dataset = "r2_file_explorer_analytics"
+dataset = "r2_file_explorer_analytics_staging"
 
 [env.staging.vars]
 JWT_SECRET = "REPLACE_WITH_SECURE_STAGING_SECRET"
@@ -76,7 +76,7 @@ preview_id = "file-explorer-sessions-prod-preview"
 # Production Analytics Engine binding
 [[env.production.analytics_engine_datasets]]
 binding = "ANALYTICS"
-dataset = "r2_file_explorer_analytics"
+dataset = "r2_file_explorer_analytics_prod"
 
 [env.production.vars]
 JWT_SECRET = "REPLACE_WITH_SECURE_PRODUCTION_SECRET"

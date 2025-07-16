@@ -20,17 +20,42 @@ npm install -g wrangler
 
 ### 2. Configure Cloudflare Resources
 
-Before running the worker locally, you need to create the required Cloudflare resources:
+Before running the worker locally, you need to create the required Cloudflare resources for each environment:
 
-1. **R2 Buckets**: Create environment-specific buckets:
-   - `file-explorer-storage-dev` (development)
-   - `file-explorer-storage-staging` (staging)
-   - `file-explorer-storage-prod` (production)
-2. **KV Namespaces**: Create environment-specific KV namespaces:
-   - `file-explorer-sessions-dev` (development)
-   - `file-explorer-sessions-staging` (staging)
-   - `file-explorer-sessions-prod` (production)
-3. **Update wrangler.toml**: Replace the placeholder IDs with your actual resource IDs
+#### Development Environment
+1. **R2 Bucket**: `file-explorer-storage-dev`
+2. **KV Namespace**: `file-explorer-sessions-dev` (with preview: `file-explorer-sessions-dev-preview`)
+3. **Analytics Engine Dataset**: `r2_file_explorer_analytics_dev`
+
+#### Staging Environment
+1. **R2 Bucket**: `file-explorer-storage-staging`
+2. **KV Namespace**: `file-explorer-sessions-staging` (with preview: `file-explorer-sessions-staging-preview`)
+3. **Analytics Engine Dataset**: `r2_file_explorer_analytics_staging`
+
+#### Production Environment
+1. **R2 Bucket**: `file-explorer-storage-prod`
+2. **KV Namespace**: `file-explorer-sessions-prod` (with preview: `file-explorer-sessions-prod-preview`)
+3. **Analytics Engine Dataset**: `r2_file_explorer_analytics_prod`
+
+#### Resource Creation Commands
+```bash
+# Development resources
+wrangler r2 bucket create file-explorer-storage-dev
+wrangler kv:namespace create "file-explorer-sessions-dev"
+wrangler kv:namespace create "file-explorer-sessions-dev" --preview
+
+# Staging resources
+wrangler r2 bucket create file-explorer-storage-staging
+wrangler kv:namespace create "file-explorer-sessions-staging"
+wrangler kv:namespace create "file-explorer-sessions-staging" --preview
+
+# Production resources
+wrangler r2 bucket create file-explorer-storage-prod
+wrangler kv:namespace create "file-explorer-sessions-prod"
+wrangler kv:namespace create "file-explorer-sessions-prod" --preview
+```
+
+**Important**: Update the KV namespace IDs in `wrangler.toml` with the actual IDs returned by the creation commands.
 
 ### 3. Environment Variables
 
@@ -83,15 +108,26 @@ open http://localhost:8787
 
 ## Deployment
 
-### Development/Staging
+### Environment-Specific Deployments
+
 ```bash
-wrangler publish --env staging
+# Deploy to staging environment
+wrangler deploy --env staging
+
+# Deploy to production environment
+wrangler deploy --env production
+
+# Deploy to development (default environment)
+wrangler deploy
 ```
 
-### Production
-```bash
-wrangler publish --env production
-```
+### Environment Summary
+
+| Environment | Worker Name | R2 Bucket | KV Namespace | Analytics Dataset | JWT Expiry | Max File Size |
+|-------------|-------------|-----------|--------------|-------------------|------------|---------------|
+| **Development** | `r2-file-explorer-api` | `file-explorer-storage-dev` | `file-explorer-sessions-dev` | `r2_file_explorer_analytics_dev` | 24 hours | 50MB |
+| **Staging** | `r2-file-explorer-api-staging` | `file-explorer-storage-staging` | `file-explorer-sessions-staging` | `r2_file_explorer_analytics_staging` | 12 hours | 100MB |
+| **Production** | `r2-file-explorer-api-prod` | `file-explorer-storage-prod` | `file-explorer-sessions-prod` | `r2_file_explorer_analytics_prod` | 8 hours | 200MB |
 
 ## Development Commands
 
