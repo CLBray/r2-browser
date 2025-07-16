@@ -30,6 +30,9 @@
 ## Observability
 - **API Observability**: Workers Analytics Engine for data points
 
+## Testing
+- **Testing**: Local unit tests are created as functionality is modified
+
 ## Common Commands
 
 ### Development
