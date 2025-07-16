@@ -1,18 +1,9 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
-
-// Type definitions for Cloudflare Workers environment
-type Bindings = {
-    R2_BUCKET: R2Bucket
-    KV_SESSIONS: KVNamespace
-    ANALYTICS?: AnalyticsEngineDataset
-    ASSETS: Fetcher
-    JWT_SECRET: string
-    JWT_EXPIRY_HOURS: string
-    MAX_FILE_SIZE_MB: string
-    ENVIRONMENT: string
-}
+import type { Bindings } from './types'
+import { authMiddleware, optionalAuthMiddleware } from './middleware/auth'
+import { loginHandler, logoutHandler, verifyHandler, refreshHandler } from './handlers/auth'
 
 // Create Hono app with type bindings
 const app = new Hono<{ Bindings: Bindings }>()
@@ -57,23 +48,13 @@ app.get('/api', (c) => {
 })
 
 // Authentication routes
-app.post('/api/auth/login', async (c) => {
-    // TODO: Implement authentication logic
-    return c.json({ message: 'Authentication endpoint - to be implemented' })
-})
+app.post('/api/auth/login', loginHandler)
+app.post('/api/auth/logout', logoutHandler)
+app.get('/api/auth/verify', verifyHandler)
+app.post('/api/auth/refresh', refreshHandler)
 
-app.post('/api/auth/logout', async (c) => {
-    // TODO: Implement logout logic
-    return c.json({ message: 'Logout endpoint - to be implemented' })
-})
-
-app.get('/api/auth/verify', async (c) => {
-    // TODO: Implement token verification
-    return c.json({ message: 'Token verification endpoint - to be implemented' })
-})
-
-// File operation routes
-app.get('/api/files', async (c) => {
+// File operation routes (protected)
+app.get('/api/files', authMiddleware, async (c) => {
     try {
         const bucket = c.env.R2_BUCKET
         const prefix = c.req.query('prefix') || ''
@@ -119,7 +100,7 @@ app.get('/api/files', async (c) => {
     }
 })
 
-app.post('/api/files/upload', async (c) => {
+app.post('/api/files/upload', authMiddleware, async (c) => {
     try {
         const bucket = c.env.R2_BUCKET
         const maxSizeMB = parseInt(c.env.MAX_FILE_SIZE_MB)
@@ -184,7 +165,7 @@ app.post('/api/files/upload', async (c) => {
     }
 })
 
-app.get('/api/files/:filename', async (c) => {
+app.get('/api/files/:filename', authMiddleware, async (c) => {
     try {
         const bucket = c.env.R2_BUCKET
         const filename = c.req.param('filename')
@@ -215,7 +196,7 @@ app.get('/api/files/:filename', async (c) => {
     }
 })
 
-app.delete('/api/files/:filename', async (c) => {
+app.delete('/api/files/:filename', authMiddleware, async (c) => {
     try {
         const bucket = c.env.R2_BUCKET
         const filename = c.req.param('filename')
