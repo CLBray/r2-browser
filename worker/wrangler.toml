@@ -26,10 +26,12 @@ dataset = "r2_file_explorer_analytics_dev"
 
 # Development environment variables
 [vars]
-JWT_SECRET = "dev-secret-key-for-local-development-only-not-secure"
 JWT_EXPIRY_HOURS = "24"
 MAX_FILE_SIZE_MB = "50"
 ENVIRONMENT = "development"
+
+# Note: JWT_SECRET should be set via wrangler secret for security
+# Run: wrangler secret put JWT_SECRET --env development
 
 # Staging environment configuration
 [env.staging]

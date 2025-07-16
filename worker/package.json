@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
     "deploy": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
@@ -13,7 +14,14 @@
     "test:unit": "vitest run src/**/*.test.ts",
     "test:integration": "vitest run src/integration.test.ts",
     "test:coverage": "vitest run --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "logs": "wrangler tail",
+    "logs:staging": "wrangler tail --env staging",
+    "logs:production": "wrangler tail --env production",
+    "setup:secrets": "echo 'Run: wrangler secret put JWT_SECRET' && echo 'Enter a secure 32+ character string'",
+    "setup:resources": "echo 'Creating R2 bucket...' && wrangler r2 bucket create file-explorer-storage-dev && echo 'Creating KV namespace...' && wrangler kv:namespace create KV_SESSIONS",
+    "clean": "rm -rf node_modules dist .wrangler && npm install"
   },
   "dependencies": {
     "@tsndr/cloudflare-worker-jwt": "^3.2.0",

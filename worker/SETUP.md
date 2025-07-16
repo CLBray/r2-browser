@@ -1,138 +1,52 @@
-# Cloudflare Worker Setup Guide
+# Worker Setup Guide
 
 ## Prerequisites
 
-1. **Node.js 18+**: Install via nvm, homebrew, or official installer
-2. **npm or yarn**: Package manager (comes with Node.js)
-3. **Wrangler CLI**: Install globally with `npm install -g wrangler`
+- Node.js 18+ installed
+- Cloudflare account with Workers enabled
+- Wrangler CLI installed globally: `npm install -g wrangler`
 
-## Development Setup
+## Initial Setup
 
-### 1. Install Dependencies
+1. **Install dependencies**
+   ```bash
+   cd worker
+   npm install
+   ```
 
-```bash
-# Install Worker dependencies
-npm install
+2. **Authenticate with Cloudflare**
+   ```bash
+   wrangler login
+   ```
 
-# Install Wrangler CLI globally if not already installed
-npm install -g wrangler
-```
+3. **Set up secrets for development**
+   ```bash
+   # Generate a secure JWT secret (minimum 32 characters)
+   wrangler secret put JWT_SECRET --env development
+   # Enter a secure random string when prompted
+   ```
 
-### 2. Configure Cloudflare Resources
+4. **Create required Cloudflare resources**
+   ```bash
+   # Create R2 bucket for development
+   wrangler r2 bucket create file-explorer-storage-dev
+   
+   # Create KV namespace for sessions
+   wrangler kv:namespace create "KV_SESSIONS" --env development
+   wrangler kv:namespace create "KV_SESSIONS" --env development --preview
+   
+   # Update wrangler.toml with the generated KV namespace IDs
+   ```
 
-Before running the worker locally, you need to create the required Cloudflare resources for each environment:
-
-#### Development Environment
-1. **R2 Bucket**: `file-explorer-storage-dev`
-2. **KV Namespace**: `file-explorer-sessions-dev` (with preview: `file-explorer-sessions-dev-preview`)
-3. **Analytics Engine Dataset**: `r2_file_explorer_analytics_dev`
-
-#### Staging Environment
-1. **R2 Bucket**: `file-explorer-storage-staging`
-2. **KV Namespace**: `file-explorer-sessions-staging` (with preview: `file-explorer-sessions-staging-preview`)
-3. **Analytics Engine Dataset**: `r2_file_explorer_analytics_staging`
-
-#### Production Environment
-1. **R2 Bucket**: `file-explorer-storage-prod`
-2. **KV Namespace**: `file-explorer-sessions-prod` (with preview: `file-explorer-sessions-prod-preview`)
-3. **Analytics Engine Dataset**: `r2_file_explorer_analytics_prod`
-
-#### Resource Creation Commands
-```bash
-# Development resources
-wrangler r2 bucket create file-explorer-storage-dev
-wrangler kv:namespace create "file-explorer-sessions-dev"
-wrangler kv:namespace create "file-explorer-sessions-dev" --preview
-
-# Staging resources
-wrangler r2 bucket create file-explorer-storage-staging
-wrangler kv:namespace create "file-explorer-sessions-staging"
-wrangler kv:namespace create "file-explorer-sessions-staging" --preview
-
-# Production resources
-wrangler r2 bucket create file-explorer-storage-prod
-wrangler kv:namespace create "file-explorer-sessions-prod"
-wrangler kv:namespace create "file-explorer-sessions-prod" --preview
-```
-
-**Important**: Update the KV namespace IDs in `wrangler.toml` with the actual IDs returned by the creation commands.
-
-### 3. Environment Variables
-
-The worker uses the following environment variables (configured in wrangler.toml):
-
-- `JWT_SECRET`: Secret key for JWT token signing
-- `JWT_EXPIRY_HOURS`: JWT token expiration time in hours
-- `MAX_FILE_SIZE_MB`: Maximum file upload size in MB
-- `ENVIRONMENT`: Current environment (development/staging/production)
-
-### 4. Build Frontend Assets
-
-Before running the worker locally, build the React frontend:
-
-```bash
-# Build the React frontend
-cd ../frontend
-npm install
-npm run build
-
-# Return to worker directory
-cd ../worker
-```
-
-### 5. Local Development
-
-```bash
-# Start the worker in development mode (serves both API and frontend)
-wrangler dev --local --port 8787
-
-# Or for remote development (uses actual Cloudflare resources)
-wrangler dev --port 8787
-```
-
-### 6. Testing the Setup
-
-Once the worker is running, you can test both the API and frontend:
-
-```bash
-# Health check
-curl http://localhost:8787/health
-
-# Basic API response
-curl http://localhost:8787/api
-
-# Frontend (React app)
-open http://localhost:8787
-```
-
-## Deployment
-
-### Environment-Specific Deployments
-
-```bash
-# Deploy to staging environment
-wrangler deploy --env staging
-
-# Deploy to production environment
-wrangler deploy --env production
-
-# Deploy to development (default environment)
-wrangler deploy
-```
-
-### Environment Summary
-
-| Environment | Worker Name | R2 Bucket | KV Namespace | Analytics Dataset | JWT Expiry | Max File Size |
-|-------------|-------------|-----------|--------------|-------------------|------------|---------------|
-| **Development** | `r2-file-explorer-api` | `file-explorer-storage-dev` | `file-explorer-sessions-dev` | `r2_file_explorer_analytics_dev` | 24 hours | 50MB |
-| **Staging** | `r2-file-explorer-api-staging` | `file-explorer-storage-staging` | `file-explorer-sessions-staging` | `r2_file_explorer_analytics_staging` | 12 hours | 100MB |
-| **Production** | `r2-file-explorer-api-prod` | `file-explorer-storage-prod` | `file-explorer-sessions-prod` | `r2_file_explorer_analytics_prod` | 8 hours | 200MB |
+5. **Update wrangler.toml**
+   - Replace the KV namespace IDs with the ones generated in step 4
+   - Ensure all bucket names match your created resources
 
 ## Development Commands
 
 ```bash
-# Type checking
-npm run type-check
+# Start development server with hot reload
+npm run dev
 
 # Run tests
 npm test
@@ -140,8 +54,44 @@ npm test
 # Run tests in watch mode
 npm run test:watch
 
-# Deploy to specific environments
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+
+# Run tests with coverage
+npm run test:coverage
+
+# Type checking
+npm run type-check
+```
+
+## Environment Configuration
+
+### Development
+- Uses local Miniflare for R2 and KV storage
+- JWT secret set via `wrangler secret`
+- File size limit: 50MB
+- JWT expiry: 24 hours
+
+### Staging
+- Separate R2 bucket and KV namespace
+- Reduced JWT expiry: 12 hours
+- Increased file size limit: 100MB
+
+### Production
+- Production R2 bucket and KV namespace
+- Shortest JWT expiry: 8 hours
+- Highest file size limit: 200MB
+
+## Deployment
+
+```bash
+# Deploy to staging
 npm run deploy:staging
+
+# Deploy to production
 npm run deploy:production
 ```
 
@@ -149,21 +99,31 @@ npm run deploy:production
 
 ### Common Issues
 
-1. **TypeScript compilation errors**: Run `npm run type-check` to identify and fix type issues
-2. **Resource binding errors**: Ensure your R2 bucket and KV namespace exist and the IDs in wrangler.toml are correct
-3. **Authentication errors**: Verify that `JWT_SECRET` is properly configured for your environment
+1. **KV namespace not found**
+   - Ensure KV namespaces are created and IDs match wrangler.toml
+   - Check that preview IDs are also set correctly
 
-### Build Process
+2. **R2 bucket access denied**
+   - Verify bucket exists and name matches wrangler.toml
+   - Check Cloudflare account permissions
 
-For JavaScript/TypeScript Workers with Hono:
-1. TypeScript code → JavaScript (via esbuild in wrangler)
-2. JavaScript → Worker bundle (via wrangler)
+3. **JWT secret not set**
+   - Run `wrangler secret put JWT_SECRET --env <environment>`
+   - Ensure secret is at least 32 characters long
 
-If you encounter build issues, try:
+4. **Tests failing**
+   - Check that test bindings in vitest.config.ts match your setup
+   - Ensure all dependencies are installed
+
+### Logs and Debugging
+
 ```bash
-# Check TypeScript compilation
-npm run type-check
+# View real-time logs during development
+wrangler dev --local=false
 
-# Clear wrangler cache
-wrangler dev --local --port 8787
+# View production logs
+wrangler tail --env production
+
+# View staging logs
+wrangler tail --env staging
 ```
