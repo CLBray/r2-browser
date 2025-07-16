@@ -62,7 +62,6 @@ wrangler kv:namespace create "file-explorer-sessions-prod" --preview
 The worker uses the following environment variables (configured in wrangler.toml):
 
 - `JWT_SECRET`: Secret key for JWT token signing
-- `CORS_ORIGINS`: Comma-separated list of allowed origins
 - `JWT_EXPIRY_HOURS`: JWT token expiration time in hours
 - `MAX_FILE_SIZE_MB`: Maximum file upload size in MB
 - `ENVIRONMENT`: Current environment (development/staging/production)
@@ -152,8 +151,7 @@ npm run deploy:production
 
 1. **TypeScript compilation errors**: Run `npm run type-check` to identify and fix type issues
 2. **Resource binding errors**: Ensure your R2 bucket and KV namespace exist and the IDs in wrangler.toml are correct
-3. **CORS issues**: Check that your frontend URL is included in the `CORS_ORIGINS` environment variable
-4. **Authentication errors**: Verify that `JWT_SECRET` is properly configured for your environment
+3. **Authentication errors**: Verify that `JWT_SECRET` is properly configured for your environment
 
 ### Build Process
 

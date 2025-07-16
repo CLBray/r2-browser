@@ -6,7 +6,6 @@ export interface Bindings {
   ANALYTICS?: AnalyticsEngineDataset
   ASSETS: Fetcher
   JWT_SECRET: string
-  CORS_ORIGINS: string
   JWT_EXPIRY_HOURS: string
   MAX_FILE_SIZE_MB: string
   ENVIRONMENT: string

@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 
@@ -10,7 +9,6 @@ type Bindings = {
     ANALYTICS?: AnalyticsEngineDataset
     ASSETS: Fetcher
     JWT_SECRET: string
-    CORS_ORIGINS: string
     JWT_EXPIRY_HOURS: string
     MAX_FILE_SIZE_MB: string
     ENVIRONMENT: string
@@ -23,17 +21,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.use('*', logger())
 app.use('*', prettyJSON())
 
-// CORS middleware with dynamic origins
-app.use('*', async (c, next) => {
-    const corsOrigins = c.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-
-    return cors({
-        origin: corsOrigins,
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowHeaders: ['Content-Type', 'Authorization'],
-        credentials: true,
-    })(c, next)
-})
+// Note: CORS not needed since frontend and API are served from the same Worker domain
 
 // Health check endpoint
 app.get('/health', async (c) => {

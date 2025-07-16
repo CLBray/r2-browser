@@ -26,7 +26,6 @@ dataset = "r2_file_explorer_analytics_dev"
 # Development environment variables
 [vars]
 JWT_SECRET = "dev-secret-key-for-local-development-only-not-secure"
-CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
 JWT_EXPIRY_HOURS = "24"
 MAX_FILE_SIZE_MB = "50"
 ENVIRONMENT = "development"
@@ -53,7 +52,6 @@ dataset = "r2_file_explorer_analytics_staging"
 
 [env.staging.vars]
 JWT_SECRET = "REPLACE_WITH_SECURE_STAGING_SECRET"
-CORS_ORIGINS = "https://r2-file-explorer-api-staging.your-subdomain.workers.dev"
 JWT_EXPIRY_HOURS = "12"
 MAX_FILE_SIZE_MB = "100"
 ENVIRONMENT = "staging"
@@ -80,7 +78,6 @@ dataset = "r2_file_explorer_analytics_prod"
 
 [env.production.vars]
 JWT_SECRET = "REPLACE_WITH_SECURE_PRODUCTION_SECRET"
-CORS_ORIGINS = "https://r2-file-explorer-api-prod.your-subdomain.workers.dev"
 JWT_EXPIRY_HOURS = "8"
 MAX_FILE_SIZE_MB = "200"
 ENVIRONMENT = "production"
