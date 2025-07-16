@@ -271,6 +271,8 @@ describe('AuthService', () => {
       await new Promise(resolve => setTimeout(resolve, 100))
       
       const result = await shortExpiryAuthService.validateToken(token)
+      console.debug('Message:', result)
+
       expect(result).toBeNull()
     })
 
