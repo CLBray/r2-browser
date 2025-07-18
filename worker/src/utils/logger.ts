@@ -31,15 +31,15 @@ export interface LogEntry {
  * Logger class for structured logging
  */
 export class Logger {
-  private env: Bindings;
+  private env: Bindings | null;
   private requestId: string;
   private sessionId?: string;
   private userId?: string;
   private path?: string;
   private method?: string;
   
-  constructor(env: Bindings, requestId: string) {
-    this.env = env;
+  constructor(env?: Bindings, requestId: string = 'default') {
+    this.env = env || null;
     this.requestId = requestId;
   }
   
@@ -108,12 +108,12 @@ export class Logger {
     });
     
     // Log to analytics if available
-    if (this.env.ANALYTICS) {
+    if (this.env && this.env.ANALYTICS) {
       try {
         this.env.ANALYTICS.writeDataPoint({
           blobs: [this.method || 'UNKNOWN', this.path || 'UNKNOWN'],
           doubles: [duration, statusCode],
-          indexes: [this.env.ENVIRONMENT, this.requestId]
+          indexes: [this.env.ENVIRONMENT || 'development', this.requestId]
         });
       } catch (analyticsError) {
         console.error('Failed to log request to analytics:', analyticsError);
@@ -154,3 +154,8 @@ export class Logger {
     }
   }
 }
+/*
+*
+ * Default logger instance for use when a request-specific logger is not available
+ */
+export const logger = new Logger();
