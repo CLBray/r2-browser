@@ -1,31 +1,36 @@
+# Common configuration for all environments
 name = "r2-file-explorer-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
+# Development environment configuration (default)
+[env.development]
+name = "r2-file-explorer-api-dev"
+
 # Static assets configuration for React frontend
-[assets]
+[env.development.assets]
 directory = "../frontend/dist"
 binding = "ASSETS"
 bucket = "file-explorer-assets-dev"
 
 # Development R2 bucket binding for file storage
-[[r2_buckets]]
+[[env.development.r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "file-explorer-storage-dev"
 
 # Development KV namespace for session storage
-[[kv_namespaces]]
+[[env.development.kv_namespaces]]
 binding = "KV_SESSIONS"
 id = "file-explorer-sessions-dev"
 preview_id = "file-explorer-sessions-dev-preview"
 
 # Development Analytics Engine binding for observability
-[[analytics_engine_datasets]]
+[[env.development.analytics_engine_datasets]]
 binding = "ANALYTICS"
 dataset = "r2_file_explorer_analytics_dev"
 
 # Development environment variables
-[vars]
+[env.development.vars]
 JWT_EXPIRY_HOURS = "24"
 MAX_FILE_SIZE_MB = "50"
 ENVIRONMENT = "development"
