@@ -35,8 +35,9 @@ JWT_EXPIRY_HOURS = "24"
 MAX_FILE_SIZE_MB = "50"
 ENVIRONMENT = "development"
 
-# Note: JWT_SECRET should be set via wrangler secret for security
-# Run: wrangler secret put JWT_SECRET --env development
+# Note: JWT_SECRET should be set via one of these methods:
+# 1. For local development: Add to .dev.vars file (already created)
+# 2. For deployed development: wrangler secret put JWT_SECRET --env development
 
 # Staging environment configuration
 [env.staging]
@@ -59,7 +60,7 @@ binding = "ANALYTICS"
 dataset = "r2_file_explorer_analytics_staging"
 
 [env.staging.vars]
-JWT_SECRET = "REPLACE_WITH_SECURE_STAGING_SECRET"
+# JWT_SECRET should be set with: wrangler secret put JWT_SECRET --env staging
 JWT_EXPIRY_HOURS = "12"
 MAX_FILE_SIZE_MB = "100"
 ENVIRONMENT = "staging"
@@ -85,7 +86,7 @@ binding = "ANALYTICS"
 dataset = "r2_file_explorer_analytics_prod"
 
 [env.production.vars]
-JWT_SECRET = "REPLACE_WITH_SECURE_PRODUCTION_SECRET"
+# JWT_SECRET should be set with: wrangler secret put JWT_SECRET --env production
 JWT_EXPIRY_HOURS = "8"
 MAX_FILE_SIZE_MB = "200"
 ENVIRONMENT = "production"
