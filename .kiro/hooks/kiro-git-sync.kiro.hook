@@ -1,7 +1,7 @@
 {
   "enabled": true,
   "name": "Kiro Git Sync",
-  "description": "Automatically commits and pushes changes to Kiro specifications to the git repository when they are modified",
+  "description": "Automatically commits and pushes changes to Kiro specifications to the git repository when they are modified.",
   "version": "1",
   "when": {
     "type": "fileEdited",
