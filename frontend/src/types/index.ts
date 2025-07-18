@@ -33,8 +33,9 @@ export interface R2Credentials {
 
 export interface AuthSession {
   token: string;
-  expiresAt: Date;
+  expiresAt: number;
   bucketName: string;
+  userId?: string;
 }
 
 export interface ApiError {
@@ -44,6 +45,13 @@ export interface ApiError {
   details?: any;
   retryable?: boolean;
   httpStatus?: number;
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
 export interface UploadTask {

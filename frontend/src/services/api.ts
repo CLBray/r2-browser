@@ -134,15 +134,21 @@ class ApiClient {
   }
 
   // Authentication endpoints
-  async login(credentials: R2Credentials): Promise<AuthSession> {
-    return this.request<AuthSession>('/api/auth/login', {
+  async login(credentials: R2Credentials): Promise<ApiResponse<AuthSession>> {
+    return this.request<ApiResponse<AuthSession>>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   }
 
-  async verify(): Promise<{ valid: boolean; bucketName?: string }> {
-    return this.request<{ valid: boolean; bucketName?: string }>('/api/auth/verify', {
+  async verify(): Promise<{ valid: boolean; bucketName?: string; userId?: string; expiresAt?: number }> {
+    return this.request<{ valid: boolean; bucketName?: string; userId?: string; expiresAt?: number }>('/api/auth/verify', {
+      method: 'POST',
+    });
+  }
+
+  async refreshToken(): Promise<{ token: string; expiresAt: number }> {
+    return this.request<{ token: string; expiresAt: number }>('/api/auth/refresh', {
       method: 'POST',
     });
   }
