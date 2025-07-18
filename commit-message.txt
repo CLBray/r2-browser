@@ -1,10 +1,6 @@
-Implement authentication components and flow (Task 10)
+chore: track package-lock.json files
 
-- Enhanced AuthForm component with validation and improved UX
-- Created ProtectedRoute component for route protection
-- Improved AuthContext with token refresh and session management
-- Updated API client with authentication endpoints
-- Added comprehensive test coverage for auth components
-- Fixed error handling and user feedback for auth flows
+- Add root package-lock.json to git tracking
+- Update worker package-lock.json
 
-This completes task 10 from the implementation plan.
+Package lock files are essential for dependency consistency across environments and team members.
