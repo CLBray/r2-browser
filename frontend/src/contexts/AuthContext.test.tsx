@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import { AuthProvider } from './AuthContext';
 import { AuthContext } from './auth';
 import { apiClient } from '../services/api';
+import { performanceMonitor } from '../utils/performance-monitor';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock the API client
@@ -10,10 +11,25 @@ vi.mock('../services/api', () => ({
   apiClient: {
     setToken: vi.fn(),
     clearToken: vi.fn(),
+    getToken: vi.fn(),
     login: vi.fn(),
     verify: vi.fn(),
     logout: vi.fn(),
     refreshToken: vi.fn()
+  }
+}));
+
+// Mock the performance monitor
+vi.mock('../utils/performance-monitor', () => ({
+  performanceMonitor: {
+    init: vi.fn(),
+    destroy: vi.fn(),
+    setUserInfo: vi.fn(),
+    trackPageLoad: vi.fn(),
+    trackUserInteraction: vi.fn(),
+    trackFileOperation: vi.fn(),
+    trackApiRequest: vi.fn(),
+    trackError: vi.fn()
   }
 }));
 
