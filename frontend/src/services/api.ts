@@ -2,6 +2,7 @@
 
 import type { R2Credentials, AuthSession, DirectoryListing, ApiError } from '../types';
 import { ErrorHandler, ErrorCode } from '../utils/error-handler';
+import { performanceMonitor } from '../utils/performance-monitor';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -14,6 +15,10 @@ class ApiClient {
 
   clearToken() {
     this.token = null;
+  }
+  
+  getToken(): string | null {
+    return this.token;
   }
 
   private async request<T>(
@@ -45,7 +50,12 @@ class ApiClient {
     }
 
     // Add request ID for tracing
-    headers['X-Request-ID'] = this.generateRequestId();
+    const requestId = this.generateRequestId();
+    headers['X-Request-ID'] = requestId;
+    
+    // Track request start time for performance monitoring
+    const startTime = performance.now();
+    const method = options.method || 'GET';
 
     try {
       // Use retry logic for network requests
@@ -55,6 +65,19 @@ class ApiClient {
             ...options,
             headers,
           });
+          
+          // Calculate request duration
+          const duration = performance.now() - startTime;
+          
+          // Track API request in performance monitoring
+          performanceMonitor.trackApiRequest(
+            endpoint,
+            method,
+            duration,
+            response.status,
+            response.ok,
+            { requestId }
+          );
 
           if (!response.ok) {
             // Try to parse error response
@@ -73,9 +96,23 @@ class ApiClient {
             // Log the error
             ErrorHandler.logError(enhancedError, {
               url,
-              method: options.method || 'GET',
-              status: response.status
+              method,
+              status: response.status,
+              requestId
             });
+            
+            // Track error in performance monitoring
+            performanceMonitor.trackError(
+              'api_error',
+              enhancedError.error,
+              `${method} ${endpoint}`,
+              undefined,
+              {
+                status: response.status,
+                code: enhancedError.code,
+                requestId
+              }
+            );
             
             throw enhancedError;
           }
@@ -92,8 +129,26 @@ class ApiClient {
         }
       );
     } catch (error) {
-      // Convert to ApiError and throw
+      // Calculate request duration even for failed requests
+      const duration = performance.now() - startTime;
+      
+      // Convert to ApiError
       const apiError = ErrorHandler.parseApiError(error);
+      
+      // Track failed request in performance monitoring
+      performanceMonitor.trackApiRequest(
+        endpoint,
+        method,
+        duration,
+        apiError.httpStatus || 0,
+        false,
+        { 
+          requestId,
+          error: apiError.error,
+          code: apiError.code
+        }
+      );
+      
       throw apiError;
     }
   }

@@ -5,6 +5,7 @@ import type { Bindings } from './types'
 import { authMiddleware, optionalAuthMiddleware } from './middleware/auth'
 import { errorHandlerMiddleware } from './middleware/error-handler'
 import { loginHandler, logoutHandler, verifyHandler, refreshHandler } from './handlers/auth'
+import { analyticsRouter } from './handlers/analytics'
 import { R2Service } from './services/r2'
 import { ErrorCode, ErrorHandler } from './utils'
 
@@ -46,10 +47,14 @@ app.get('/api', (c) => {
         endpoints: {
             health: '/health',
             auth: '/api/auth',
-            files: '/api/files'
+            files: '/api/files',
+            analytics: '/api/analytics'
         }
     })
 })
+
+// Mount analytics router
+app.route('/api/analytics', analyticsRouter)
 
 // Authentication routes
 app.post('/api/auth/login', loginHandler)

@@ -6,6 +6,7 @@ import type { R2Credentials, AuthSession } from '../types';
 import { apiClient } from '../services/api';
 import { AuthContext, type AuthContextType } from './auth';
 import { ErrorHandler, ErrorCode } from '../utils/error-handler';
+import { performanceMonitor } from '../utils/performance-monitor';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -135,42 +136,96 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Login function
   const login = async (credentials: R2Credentials) => {
-    const response = await apiClient.login(credentials);
+    const startTime = performance.now();
     
-    if (response.success && response.data) {
-      const { token, expiresAt, bucketName: bucket } = response.data;
+    try {
+      const response = await apiClient.login(credentials);
       
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
-      localStorage.setItem(AUTH_EXPIRY_KEY, expiresAt.toString());
+      if (response.success && response.data) {
+        const { token, expiresAt, bucketName: bucket, userId: user } = response.data;
+        
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+        localStorage.setItem(AUTH_EXPIRY_KEY, expiresAt.toString());
+        
+        apiClient.setToken(token);
+        setIsAuthenticated(true);
+        setBucketName(bucket);
+        setUserId(user || null);
+        setSessionExpiry(new Date(expiresAt));
+        
+        // Set up token refresh
+        setupRefreshTimer(new Date(expiresAt));
+        
+        // Track successful login in performance monitoring
+        performanceMonitor.trackUserInteraction(
+          'login_success',
+          performance.now() - startTime,
+          true,
+          { bucketName: bucket }
+        );
+        
+        // Update user info in performance monitor
+        performanceMonitor.setUserInfo(user || undefined, bucket);
+        
+        return response.data;
+      } else {
+        // Track failed login
+        performanceMonitor.trackUserInteraction(
+          'login_failure',
+          performance.now() - startTime,
+          false,
+          { reason: response.message || 'Unknown error' }
+        );
+        
+        throw {
+          error: response.message || 'Authentication failed',
+          code: ErrorCode.INVALID_CREDENTIALS
+        };
+      }
+    } catch (error) {
+      // Track login error
+      performanceMonitor.trackError(
+        'login_error',
+        error instanceof Error ? error.message : 'Authentication failed',
+        'auth_context',
+        error instanceof Error ? error.stack : undefined
+      );
       
-      apiClient.setToken(token);
-      setIsAuthenticated(true);
-      setBucketName(bucket);
-      setSessionExpiry(new Date(expiresAt));
-      
-      // Set up token refresh
-      setupRefreshTimer(new Date(expiresAt));
-      
-      return response.data;
-    } else {
-      throw {
-        error: response.message || 'Authentication failed',
-        code: ErrorCode.INVALID_CREDENTIALS
-      };
+      throw error;
     }
   };
 
   // Logout function
   const logout = async () => {
+    const startTime = performance.now();
+    
     try {
       // Attempt to logout from server, but always clear local state
       if (isAuthenticated) {
         await apiClient.logout();
+        
+        // Track successful logout
+        performanceMonitor.trackUserInteraction(
+          'logout_success',
+          performance.now() - startTime,
+          true,
+          { bucketName }
+        );
       }
     } catch (error) {
       console.error('Logout error:', error);
       ErrorHandler.logError(error, { action: 'logout' });
+      
+      // Track logout error
+      performanceMonitor.trackError(
+        'logout_error',
+        error instanceof Error ? error.message : 'Logout failed',
+        'auth_context',
+        error instanceof Error ? error.stack : undefined
+      );
     } finally {
+      // Clear user info in performance monitor
+      performanceMonitor.setUserInfo(undefined, undefined);
       clearAuthState();
     }
   };

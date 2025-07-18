@@ -1,8 +1,10 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { ErrorHandler } from '../utils/error-handler';
+import { performanceMonitor } from '../utils/performance-monitor';
 
 interface Props {
   children: ReactNode;
+  componentName?: string;
   fallback?: ReactNode | ((error: Error, resetError: () => void) => ReactNode);
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
@@ -14,6 +16,7 @@ interface State {
 
 /**
  * ErrorBoundary component for catching and handling React component errors
+ * Enhanced with performance monitoring and error tracking
  */
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
@@ -32,8 +35,22 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log the error
-    ErrorHandler.logError(error, { componentStack: errorInfo.componentStack });
+    const componentName = this.props.componentName || 'unknown';
+    
+    // Log the error using ErrorHandler
+    ErrorHandler.logError(error, { 
+      componentStack: errorInfo.componentStack,
+      componentName 
+    });
+    
+    // Track the error in performance monitoring
+    performanceMonitor.trackError(
+      'react_error',
+      error.message || 'React component error',
+      `component:${componentName}`,
+      error.stack,
+      { componentStack: errorInfo.componentStack }
+    );
     
     // Call onError prop if provided
     if (this.props.onError) {
@@ -46,6 +63,19 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null
     });
+    
+    // Track error recovery
+    if (this.state.error) {
+      performanceMonitor.trackUserInteraction(
+        'error_recovery',
+        0,
+        true,
+        { 
+          componentName: this.props.componentName,
+          errorMessage: this.state.error.message
+        }
+      );
+    }
   };
 
   render(): ReactNode {
@@ -68,6 +98,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             onClick={this.resetError}
             className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-sm font-medium rounded-md"
+            data-testid="error-reset-button"
           >
             Try again
           </button>
