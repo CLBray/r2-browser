@@ -13,8 +13,28 @@ export interface Bindings {
 
 export interface FileObject {
   key: string
+  name: string
   size: number
   lastModified: Date
+  etag: string
+}
+
+export interface FolderObject {
+  key: string
+  name: string
+  type: 'folder'
+}
+
+export interface DirectoryListing {
+  objects: FileObject[]
+  folders: FolderObject[]
+  currentPath: string
+  hasMore: boolean
+  cursor?: string
+}
+
+export interface UploadedPart {
+  partNumber: number
   etag: string
 }
 
@@ -31,6 +51,20 @@ export interface UploadResponse {
   message?: string
   filename?: string
   size?: number
+  error?: string
+}
+
+export interface MultipartUploadResponse {
+  success: boolean
+  uploadId?: string
+  key?: string
+  error?: string
+}
+
+export interface UploadPartResponse {
+  success: boolean
+  partNumber?: number
+  etag?: string
   error?: string
 }
 

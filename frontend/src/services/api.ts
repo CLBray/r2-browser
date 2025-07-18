@@ -1,0 +1,294 @@
+// API client service for communicating with the Cloudflare Worker backend
+
+import type { R2Credentials, AuthSession, DirectoryListing, ApiError } from '../types';
+import { ErrorHandler, ErrorCode } from '../utils/error-handler';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+class ApiClient {
+  private token: string | null = null;
+
+  setToken(token: string) {
+    this.token = token;
+  }
+
+  clearToken() {
+    this.token = null;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add existing headers if they exist
+    if (options.headers) {
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+      } else if (Array.isArray(options.headers)) {
+        options.headers.forEach(([key, value]) => {
+          headers[key] = value;
+        });
+      } else {
+        Object.assign(headers, options.headers);
+      }
+    }
+
+    if (this.token) {
+      headers.Authorization = `Bearer ${this.token}`;
+    }
+
+    // Add request ID for tracing
+    headers['X-Request-ID'] = this.generateRequestId();
+
+    try {
+      // Use retry logic for network requests
+      return await ErrorHandler.withRetry(
+        async () => {
+          const response = await fetch(url, {
+            ...options,
+            headers,
+          });
+
+          if (!response.ok) {
+            // Try to parse error response
+            const errorData: ApiError = await response.json().catch(() => ({
+              error: `HTTP error ${response.status}: ${response.statusText}`,
+              code: ErrorCode.NETWORK_ERROR,
+            }));
+            
+            // Enhance error with HTTP status
+            const enhancedError: ApiError = {
+              ...errorData,
+              code: errorData.code || this.mapHttpStatusToErrorCode(response.status),
+              httpStatus: response.status
+            };
+            
+            // Log the error
+            ErrorHandler.logError(enhancedError, {
+              url,
+              method: options.method || 'GET',
+              status: response.status
+            });
+            
+            throw enhancedError;
+          }
+
+          return response.json();
+        },
+        3, // Max retries
+        1000, // Base delay
+        10000, // Max delay
+        (error) => {
+          // Only retry network errors and server errors (5xx)
+          const apiError = ErrorHandler.parseApiError(error);
+          return ErrorHandler.isRetryable(apiError);
+        }
+      );
+    } catch (error) {
+      // Convert to ApiError and throw
+      const apiError = ErrorHandler.parseApiError(error);
+      throw apiError;
+    }
+  }
+  
+  /**
+   * Maps HTTP status codes to error codes
+   */
+  private mapHttpStatusToErrorCode(status: number): ErrorCode {
+    switch (status) {
+      case 400:
+        return ErrorCode.INVALID_REQUEST;
+      case 401:
+        return ErrorCode.UNAUTHORIZED;
+      case 403:
+        return ErrorCode.FORBIDDEN;
+      case 404:
+        return ErrorCode.FILE_NOT_FOUND;
+      case 413:
+        return ErrorCode.FILE_TOO_LARGE;
+      case 429:
+        return ErrorCode.RATE_LIMITED;
+      case 500:
+        return ErrorCode.INTERNAL_ERROR;
+      case 503:
+        return ErrorCode.SERVICE_UNAVAILABLE;
+      case 504:
+        return ErrorCode.TIMEOUT;
+      default:
+        return status >= 500 ? ErrorCode.INTERNAL_ERROR : ErrorCode.UNKNOWN_ERROR;
+    }
+  }
+  
+  /**
+   * Generates a random request ID for tracing
+   */
+  private generateRequestId(): string {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  }
+
+  // Authentication endpoints
+  async login(credentials: R2Credentials): Promise<AuthSession> {
+    return this.request<AuthSession>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+
+  async verify(): Promise<{ valid: boolean; bucketName?: string }> {
+    return this.request<{ valid: boolean; bucketName?: string }>('/api/auth/verify', {
+      method: 'POST',
+    });
+  }
+
+  async logout(): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>('/api/auth/logout', {
+      method: 'POST',
+    });
+  }
+
+  // File operation endpoints
+  async listFiles(path: string = '', prefix: string = ''): Promise<DirectoryListing> {
+    const params = new URLSearchParams();
+    if (path) params.append('path', path);
+    if (prefix) params.append('prefix', prefix);
+    
+    return this.request<DirectoryListing>(`/api/files?${params.toString()}`);
+  }
+
+  async uploadFiles(files: File[], path: string = ''): Promise<{ uploaded: string[]; errors: string[] }> {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    if (path) formData.append('path', path);
+
+    try {
+      // Use retry logic for uploads
+      return await ErrorHandler.withRetry(
+        async () => {
+          const response = await fetch(`${API_BASE_URL}/api/files/upload`, {
+            method: 'POST',
+            headers: {
+              ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+              'X-Request-ID': this.generateRequestId()
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData: ApiError = await response.json().catch(() => ({
+              error: `Upload failed with status ${response.status}`,
+              code: ErrorCode.UPLOAD_FAILED,
+            }));
+            
+            // Enhance error with HTTP status
+            const enhancedError: ApiError = {
+              ...errorData,
+              code: errorData.code || ErrorCode.UPLOAD_FAILED,
+              httpStatus: response.status
+            };
+            
+            // Log the error
+            ErrorHandler.logError(enhancedError, {
+              path,
+              fileCount: files.length,
+              totalSize: files.reduce((sum, file) => sum + file.size, 0)
+            });
+            
+            throw enhancedError;
+          }
+
+          return response.json();
+        },
+        3, // Max retries
+        2000, // Base delay (longer for uploads)
+        15000, // Max delay
+        (error) => {
+          // Only retry network errors and server errors (5xx)
+          const apiError = ErrorHandler.parseApiError(error);
+          return ErrorHandler.isRetryable(apiError);
+        }
+      );
+    } catch (error) {
+      // Convert to ApiError and throw
+      const apiError = ErrorHandler.parseApiError(error);
+      throw apiError;
+    }
+  }
+
+  async downloadFile(key: string): Promise<Blob> {
+    try {
+      // Use retry logic for downloads
+      return await ErrorHandler.withRetry(
+        async () => {
+          const response = await fetch(`${API_BASE_URL}/api/files/download?key=${encodeURIComponent(key)}`, {
+            headers: {
+              ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+              'X-Request-ID': this.generateRequestId()
+            },
+          });
+
+          if (!response.ok) {
+            const errorData: ApiError = await response.json().catch(() => ({
+              error: `Download failed with status ${response.status}`,
+              code: ErrorCode.DOWNLOAD_FAILED,
+            }));
+            
+            // Enhance error with HTTP status
+            const enhancedError: ApiError = {
+              ...errorData,
+              code: errorData.code || ErrorCode.DOWNLOAD_FAILED,
+              httpStatus: response.status
+            };
+            
+            // Log the error
+            ErrorHandler.logError(enhancedError, { key });
+            
+            throw enhancedError;
+          }
+
+          return response.blob();
+        },
+        3, // Max retries
+        1000, // Base delay
+        10000, // Max delay
+        (error) => {
+          // Only retry network errors and server errors (5xx)
+          const apiError = ErrorHandler.parseApiError(error);
+          return ErrorHandler.isRetryable(apiError);
+        }
+      );
+    } catch (error) {
+      // Convert to ApiError and throw
+      const apiError = ErrorHandler.parseApiError(error);
+      throw apiError;
+    }
+  }
+
+  async deleteFile(key: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(`/api/files?key=${encodeURIComponent(key)}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async renameFile(oldKey: string, newKey: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>('/api/files/rename', {
+      method: 'PUT',
+      body: JSON.stringify({ oldKey, newKey }),
+    });
+  }
+
+  async createFolder(path: string, name: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>('/api/files/folder', {
+      method: 'POST',
+      body: JSON.stringify({ path, name }),
+    });
+  }
+}
+
+export const apiClient = new ApiClient();

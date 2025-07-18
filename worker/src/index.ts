@@ -3,12 +3,16 @@ import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 import type { Bindings } from './types'
 import { authMiddleware, optionalAuthMiddleware } from './middleware/auth'
+import { errorHandlerMiddleware } from './middleware/error-handler'
 import { loginHandler, logoutHandler, verifyHandler, refreshHandler } from './handlers/auth'
+import { R2Service } from './services/r2'
+import { ErrorCode, ErrorHandler } from './utils'
 
 // Create Hono app with type bindings
 const app = new Hono<{ Bindings: Bindings }>()
 
 // Global middleware
+app.use('*', errorHandlerMiddleware) // Add error handling middleware first
 app.use('*', logger())
 app.use('*', prettyJSON())
 
@@ -53,37 +57,34 @@ app.post('/api/auth/logout', logoutHandler)
 app.get('/api/auth/verify', verifyHandler)
 app.post('/api/auth/refresh', refreshHandler)
 
+// Create R2 service instance for each request
+const getR2Service = (c: any) => new R2Service(c.env.R2_BUCKET)
+
 // File operation routes (protected)
 app.get('/api/files', authMiddleware, async (c) => {
     try {
-        const bucket = c.env.R2_BUCKET
+        const r2Service = getR2Service(c)
         const prefix = c.req.query('prefix') || ''
+        const cursor = c.req.query('cursor')
 
-        const objects = await bucket.list({ prefix })
+        const listing = await r2Service.listDirectory(prefix, cursor)
 
         // Track file listing analytics
         if (c.env.ANALYTICS) {
             c.env.ANALYTICS.writeDataPoint({
                 blobs: ['file_list'],
-                doubles: [objects.objects.length],
+                doubles: [listing.objects.length + listing.folders.length],
                 indexes: [c.env.ENVIRONMENT, prefix || 'root']
             })
         }
 
         return c.json({
             success: true,
-            objects: objects.objects.map(obj => ({
-                key: obj.key,
-                size: obj.size,
-                lastModified: obj.uploaded,
-                etag: obj.etag
-            })),
-            truncated: objects.truncated,
-            ...(objects.truncated && 'cursor' in objects ? { cursor: objects.cursor } : {})
+            ...listing
         })
     } catch (error) {
         console.error('Error listing files:', error)
-        
+
         // Track error analytics
         if (c.env.ANALYTICS) {
             c.env.ANALYTICS.writeDataPoint({
@@ -102,7 +103,7 @@ app.get('/api/files', authMiddleware, async (c) => {
 
 app.post('/api/files/upload', authMiddleware, async (c) => {
     try {
-        const bucket = c.env.R2_BUCKET
+        const r2Service = getR2Service(c)
         const maxSizeMB = parseInt(c.env.MAX_FILE_SIZE_MB)
 
         // Get file from request
@@ -125,14 +126,21 @@ app.post('/api/files/upload', authMiddleware, async (c) => {
             }, 413)
         }
 
-        // Get filename from query or generate one
+        // Get path and filename from query
+        const path = c.req.query('path') || ''
         const filename = c.req.query('filename') || `upload-${Date.now()}`
 
+        // Combine path and filename for the full key
+        const key = path ? (path.endsWith('/') ? `${path}${filename}` : `${path}/${filename}`) : filename
+
+        // Get content type from request or infer from filename
+        const contentType = body.type || inferContentType(filename)
+
         // Upload to R2
-        await bucket.put(filename, body)
+        const result = await r2Service.uploadFile(key, body, contentType)
 
         // Track successful file upload analytics
-        if (c.env.ANALYTICS) {
+        if (result.success && c.env.ANALYTICS) {
             c.env.ANALYTICS.writeDataPoint({
                 blobs: ['file_upload_success'],
                 doubles: [body.size / (1024 * 1024)], // Size in MB
@@ -140,12 +148,7 @@ app.post('/api/files/upload', authMiddleware, async (c) => {
             })
         }
 
-        return c.json({
-            success: true,
-            message: 'File uploaded successfully',
-            filename,
-            size: body.size
-        })
+        return c.json(result)
     } catch (error) {
         console.error('Error uploading file:', error)
 
@@ -165,12 +168,148 @@ app.post('/api/files/upload', authMiddleware, async (c) => {
     }
 })
 
-app.get('/api/files/:filename', authMiddleware, async (c) => {
+// Multipart upload initiation
+app.post('/api/files/multipart/create', authMiddleware, async (c) => {
     try {
-        const bucket = c.env.R2_BUCKET
-        const filename = c.req.param('filename')
+        const r2Service = getR2Service(c)
 
-        const object = await bucket.get(filename)
+        // Get request body
+        const { key, contentType } = await c.req.json<{ key: string, contentType?: string }>()
+
+        if (!key) {
+            return c.json({
+                success: false,
+                error: 'Missing required parameter: key'
+            }, 400)
+        }
+
+        const uploadId = await r2Service.createMultipartUpload(key, contentType)
+
+        return c.json({
+            success: true,
+            uploadId,
+            key
+        })
+    } catch (error) {
+        console.error('Error creating multipart upload:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to create multipart upload'
+        }, 500)
+    }
+})
+
+// Upload part
+app.post('/api/files/multipart/upload-part', authMiddleware, async (c) => {
+    try {
+        const r2Service = getR2Service(c)
+
+        // Get query parameters
+        const key = c.req.query('key')
+        const uploadId = c.req.query('uploadId')
+        const partNumberStr = c.req.query('partNumber')
+
+        if (!key || !uploadId || !partNumberStr) {
+            return c.json({
+                success: false,
+                error: 'Missing required parameters: key, uploadId, partNumber'
+            }, 400)
+        }
+
+        const partNumber = parseInt(partNumberStr)
+        if (isNaN(partNumber) || partNumber < 1 || partNumber > 10000) {
+            return c.json({
+                success: false,
+                error: 'Invalid part number. Must be between 1 and 10000'
+            }, 400)
+        }
+
+        // Get part data
+        const body = await c.req.blob()
+
+        const part = await r2Service.uploadPart(key, uploadId, partNumber, body)
+
+        return c.json({
+            success: true,
+            ...part
+        })
+    } catch (error) {
+        console.error('Error uploading part:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to upload part'
+        }, 500)
+    }
+})
+
+// Complete multipart upload
+app.post('/api/files/multipart/complete', authMiddleware, async (c) => {
+    try {
+        const r2Service = getR2Service(c)
+
+        // Get request body
+        const { key, uploadId, parts } = await c.req.json<{
+            key: string,
+            uploadId: string,
+            parts: { partNumber: number, etag: string }[]
+        }>()
+
+        if (!key || !uploadId || !parts || !Array.isArray(parts)) {
+            return c.json({
+                success: false,
+                error: 'Missing required parameters: key, uploadId, parts'
+            }, 400)
+        }
+
+        const result = await r2Service.completeMultipartUpload(key, uploadId, parts)
+
+        return c.json(result)
+    } catch (error) {
+        console.error('Error completing multipart upload:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to complete multipart upload'
+        }, 500)
+    }
+})
+
+// Abort multipart upload
+app.post('/api/files/multipart/abort', authMiddleware, async (c) => {
+    try {
+        const r2Service = getR2Service(c)
+
+        // Get request body
+        const { key, uploadId } = await c.req.json<{ key: string, uploadId: string }>()
+
+        if (!key || !uploadId) {
+            return c.json({
+                success: false,
+                error: 'Missing required parameters: key, uploadId'
+            }, 400)
+        }
+
+        const result = await r2Service.abortMultipartUpload(key, uploadId)
+
+        return c.json(result)
+    } catch (error) {
+        console.error('Error aborting multipart upload:', error)
+        return c.json({
+            success: false,
+            error: 'Failed to abort multipart upload'
+        }, 500)
+    }
+})
+
+app.get('/api/files/:key*', authMiddleware, async (c) => {
+    try {
+        const r2Service = getR2Service(c)
+        const key = c.req.param('key') + (c.req.param('0') || '')
+        const range = c.req.header('Range')
+
+        // Get the file with range support if specified
+        const object = range
+            ? await r2Service.getFileWithRange(key, range)
+            : await r2Service.getFile(key)
 
         if (!object) {
             return c.json({
@@ -179,16 +318,45 @@ app.get('/api/files/:filename', authMiddleware, async (c) => {
             }, 404)
         }
 
-        return new Response(object.body, {
-            headers: {
-                'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-                'Content-Length': object.size.toString(),
-                'ETag': object.etag,
-                'Last-Modified': object.uploaded.toUTCString()
-            }
-        })
+        // Track download analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_download'],
+                doubles: [object.size / (1024 * 1024)], // Size in MB
+                indexes: [c.env.ENVIRONMENT, key.split('.').pop() || 'unknown'] // File extension
+            })
+        }
+
+        const headers = {
+            'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+            'Content-Length': object.size.toString(),
+            'ETag': object.etag,
+            'Last-Modified': object.uploaded.toUTCString(),
+            'Accept-Ranges': 'bytes'
+        }
+
+        // Add Content-Range header if this is a range request
+        if (range && object.range) {
+            const { offset, length } = object.range
+            const end = length ? offset + length - 1 : object.size - 1
+            headers['Content-Range'] = `bytes ${offset}-${end}/${object.size}`
+            headers['Content-Length'] = (length || (object.size - offset)).toString()
+            return new Response(object.body, { status: 206, headers })
+        }
+
+        return new Response(object.body, { headers })
     } catch (error) {
         console.error('Error downloading file:', error)
+
+        // Track download error analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_download_error'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
+            })
+        }
+
         return c.json({
             success: false,
             error: 'Failed to download file'
@@ -196,23 +364,126 @@ app.get('/api/files/:filename', authMiddleware, async (c) => {
     }
 })
 
-app.delete('/api/files/:filename', authMiddleware, async (c) => {
+app.delete('/api/files/:key*', authMiddleware, async (c) => {
     try {
-        const bucket = c.env.R2_BUCKET
-        const filename = c.req.param('filename')
+        const r2Service = getR2Service(c)
+        const key = c.req.param('key') + (c.req.param('0') || '')
 
-        await bucket.delete(filename)
-
-        return c.json({
-            success: true,
-            message: 'File deleted successfully',
-            filename
-        })
+        // Check if this is a folder (ends with /)
+        if (key.endsWith('/')) {
+            const result = await r2Service.deleteFolder(key)
+            return c.json(result)
+        } else {
+            const result = await r2Service.deleteFile(key)
+            return c.json(result)
+        }
     } catch (error) {
-        console.error('Error deleting file:', error)
+        console.error('Error deleting file/folder:', error)
+
+        // Track delete error analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_delete_error'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
+            })
+        }
+
         return c.json({
             success: false,
-            error: 'Failed to delete file'
+            error: 'Failed to delete file/folder'
+        }, 500)
+    }
+})
+
+// Create folder
+app.post('/api/files/folder', authMiddleware, async (c) => {
+    try {
+        const r2Service = getR2Service(c)
+
+        // Get request body
+        const { path } = await c.req.json<{ path: string }>()
+
+        if (!path) {
+            return c.json({
+                success: false,
+                error: 'Missing required parameter: path'
+            }, 400)
+        }
+
+        const result = await r2Service.createFolder(path)
+
+        // Track folder creation analytics
+        if (result.success && c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['folder_create'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, path.split('/').length.toString()]
+            })
+        }
+
+        return c.json(result)
+    } catch (error) {
+        console.error('Error creating folder:', error)
+
+        // Track folder creation error analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['folder_create_error'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
+            })
+        }
+
+        return c.json({
+            success: false,
+            error: 'Failed to create folder'
+        }, 500)
+    }
+})
+
+// Rename file or folder
+app.put('/api/files/rename', authMiddleware, async (c) => {
+    try {
+        const r2Service = getR2Service(c)
+
+        // Get request body
+        const { oldKey, newKey } = await c.req.json<{ oldKey: string, newKey: string }>()
+
+        if (!oldKey || !newKey) {
+            return c.json({
+                success: false,
+                error: 'Missing required parameters: oldKey, newKey'
+            }, 400)
+        }
+
+        const result = await r2Service.renameObject(oldKey, newKey)
+
+        // Track rename analytics
+        if (result.success && c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_rename'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, oldKey.endsWith('/') ? 'folder' : 'file']
+            })
+        }
+
+        return c.json(result)
+    } catch (error) {
+        console.error('Error renaming file/folder:', error)
+
+        // Track rename error analytics
+        if (c.env.ANALYTICS) {
+            c.env.ANALYTICS.writeDataPoint({
+                blobs: ['file_rename_error'],
+                doubles: [1],
+                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
+            })
+        }
+
+        return c.json({
+            success: false,
+            error: 'Failed to rename file/folder'
         }, 500)
     }
 })
@@ -285,5 +556,39 @@ app.onError((err, c) => {
         message: 'An unexpected error occurred'
     }, 500)
 })
+
+// Helper function to infer content type from filename
+function inferContentType(filename: string): string {
+    const extension = filename.split('.').pop()?.toLowerCase()
+
+    const mimeTypes: Record<string, string> = {
+        'html': 'text/html',
+        'css': 'text/css',
+        'js': 'application/javascript',
+        'json': 'application/json',
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'svg': 'image/svg+xml',
+        'webp': 'image/webp',
+        'pdf': 'application/pdf',
+        'txt': 'text/plain',
+        'md': 'text/markdown',
+        'mp4': 'video/mp4',
+        'mp3': 'audio/mpeg',
+        'zip': 'application/zip',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls': 'application/vnd.ms-excel',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt': 'application/vnd.ms-powerpoint',
+        'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    }
+
+    return extension && extension in mimeTypes
+        ? mimeTypes[extension]
+        : 'application/octet-stream'
+}
 
 export default app

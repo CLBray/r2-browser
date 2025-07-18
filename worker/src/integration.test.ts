@@ -173,8 +173,8 @@ describe('R2 File Explorer Integration Tests', () => {
       const data = await response.json() as any
       if (response.status === 200) {
         expect(data.success).toBe(true)
-        expect(data.filename).toBe('test-upload.txt')
-        expect(data).toHaveProperty('size')
+        expect(data.message).toBe('File uploaded successfully')
+        expect(data.data).toHaveProperty('key')
       }
     })
 
@@ -208,7 +208,8 @@ describe('R2 File Explorer Integration Tests', () => {
       const data = await response.json() as any
       if (response.status === 200) {
         expect(data.success).toBe(true)
-        expect(data.filename).toBe('test-file-to-delete.txt')
+        expect(data.message).toBe('File deleted successfully')
+        expect(data.data).toHaveProperty('key')
       }
     })
 

@@ -1,69 +1,89 @@
-# React + TypeScript + Vite
+# R2 File Explorer Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based web application that provides a familiar file manager interface for Cloudflare R2 buckets.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Authentication**: Secure login using Cloudflare R2 API credentials
+- **File Browser**: Navigate R2 buckets with familiar file explorer UI
+- **Responsive Design**: Built with Tailwind CSS for modern, responsive layouts
+- **State Management**: React Query for efficient API state management and caching
+- **Routing**: React Router for seamless navigation
 
-## Expanding the ESLint configuration
+## Technology Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling
+- **React Router** for navigation
+- **React Query** for API state management
+- **Vite** for fast development and building
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Development
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### Prerequisites
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js 18+ 
+- npm or yarn
+
+### Setup
+
+1. Install dependencies:
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. Copy environment variables:
+```bash
+cp .env.example .env
 ```
+
+3. Start development server:
+```bash
+npm run dev
+```
+
+4. Build for production:
+```bash
+npm run build
+```
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── AuthForm.tsx    # Authentication form
+│   ├── FileExplorer.tsx # Main file explorer (placeholder)
+│   └── Layout.tsx      # App layout wrapper
+├── contexts/           # React contexts
+│   ├── auth.ts         # Auth context definition
+│   └── AuthContext.tsx # Auth provider component
+├── hooks/              # Custom React hooks
+│   └── useAuth.ts      # Authentication hook
+├── providers/          # Context providers
+│   └── QueryProvider.tsx # React Query provider
+├── services/           # API services
+│   └── api.ts          # API client
+├── types/              # TypeScript type definitions
+│   └── index.ts        # Core types
+├── App.tsx             # Main app component with routing
+└── main.tsx            # App entry point
+```
+
+## Authentication
+
+The app uses Cloudflare R2 API credentials for authentication:
+
+- **Account ID**: Your Cloudflare account ID
+- **Access Key ID**: R2 API access key ID
+- **Secret Access Key**: R2 API secret access key  
+- **Bucket Name**: Target R2 bucket name
+
+Credentials are validated against the backend API and stored securely using JWT tokens.

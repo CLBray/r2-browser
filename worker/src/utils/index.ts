@@ -1,92 +1,124 @@
-// Utility functions for the R2 File Explorer API
+export * from './error-handler';
+export * from './logger';
 
 /**
- * Validates file size against maximum allowed size
+ * Generates a random request ID for tracing
  */
-export function validateFileSize(sizeBytes: number, maxSizeMB: number): boolean {
-  const maxSizeBytes = maxSizeMB * 1024 * 1024
-  return sizeBytes <= maxSizeBytes
+export function generateRequestId(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
 /**
- * Extracts file extension from filename
+ * Implements exponential backoff for retrying operations
+ * 
+ * @param operation - The operation to retry
+ * @param maxRetries - Maximum number of retries
+ * @param baseDelayMs - Base delay in milliseconds
+ * @param maxDelayMs - Maximum delay in milliseconds
+ * @returns The result of the operation
+ * @throws The last error encountered if all retries fail
  */
-export function getFileExtension(filename: string): string {
-  const parts = filename.split('.')
-  return parts.length > 1 ? parts.pop()?.toLowerCase() || '' : ''
-}
-
-/**
- * Generates a unique filename with timestamp
- */
-export function generateUniqueFilename(originalName?: string): string {
-  const timestamp = Date.now()
-  const random = Math.random().toString(36).substring(2, 8)
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000,
+  maxDelayMs: number = 10000
+): Promise<T> {
+  let lastError: Error | unknown;
   
-  if (originalName) {
-    const extension = getFileExtension(originalName)
-    const baseName = originalName.replace(/\.[^/.]+$/, '')
-    return `${baseName}-${timestamp}-${random}${extension ? '.' + extension : ''}`
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      
+      if (attempt < maxRetries) {
+        // Calculate delay with exponential backoff and jitter
+        const delay = Math.min(
+          maxDelayMs,
+          baseDelayMs * Math.pow(2, attempt) * (0.8 + Math.random() * 0.4)
+        );
+        
+        console.warn(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
   
-  return `upload-${timestamp}-${random}`
+  throw lastError;
 }
 
 /**
- * Formats file size in human readable format
+ * Safely parses JSON with error handling
+ */
+export function safeJsonParse<T>(json: string, defaultValue: T): T {
+  try {
+    return JSON.parse(json) as T;
+  } catch (error) {
+    console.error('Error parsing JSON:', error);
+    return defaultValue;
+  }
+}
+
+/**
+ * Truncates a string to a maximum length
+ */
+export function truncateString(str: string, maxLength: number = 100): string {
+  if (str.length <= maxLength) return str;
+  return str.substring(0, maxLength - 3) + '...';
+}
+
+/**
+ * Sanitizes a file path to prevent path traversal attacks
+ */
+export function sanitizeFilePath(path: string): string {
+  // Remove any path traversal sequences
+  let sanitized = path.replace(/\.\.\//g, '').replace(/\.\.\\/g, '');
+  
+  // Ensure path starts with a forward slash if not empty
+  if (sanitized && !sanitized.startsWith('/')) {
+    sanitized = '/' + sanitized;
+  }
+  
+  // Remove duplicate slashes
+  sanitized = sanitized.replace(/\/+/g, '/');
+  
+  return sanitized;
+}
+
+/**
+ * Validates a file name to ensure it's safe
+ */
+export function isValidFileName(fileName: string): boolean {
+  // Check for invalid characters
+  const invalidChars = /[<>:"/\\|?*\x00-\x1F]/;
+  if (invalidChars.test(fileName)) {
+    return false;
+  }
+  
+  // Check for reserved names (Windows)
+  const reservedNames = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+  if (reservedNames.test(fileName)) {
+    return false;
+  }
+  
+  // Check for empty name or only dots
+  if (!fileName || fileName === '.' || fileName === '..') {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Formats a file size in bytes to a human-readable string
  */
 export function formatFileSize(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let size = bytes
-  let unitIndex = 0
+  if (bytes === 0) return '0 Bytes';
   
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024
-    unitIndex++
-  }
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
   
-  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
-}
-
-/**
- * Validates filename for R2 compatibility
- */
-export function validateFilename(filename: string): { valid: boolean; error?: string } {
-  if (!filename || filename.trim().length === 0) {
-    return { valid: false, error: 'Filename cannot be empty' }
-  }
-  
-  if (filename.length > 1024) {
-    return { valid: false, error: 'Filename too long (max 1024 characters)' }
-  }
-  
-  // R2 object keys cannot contain certain characters
-  const invalidChars = /[<>:"|?*\x00-\x1f]/
-  if (invalidChars.test(filename)) {
-    return { valid: false, error: 'Filename contains invalid characters' }
-  }
-  
-  return { valid: true }
-}
-
-/**
- * Creates a standardized API error response
- */
-export function createErrorResponse(message: string, code?: string) {
-  return {
-    success: false,
-    error: message,
-    ...(code && { code })
-  }
-}
-
-/**
- * Creates a standardized API success response
- */
-export function createSuccessResponse<T>(data?: T, message?: string) {
-  return {
-    success: true,
-    ...(data && { data }),
-    ...(message && { message })
-  }
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
