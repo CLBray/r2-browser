@@ -20,11 +20,23 @@
    ```
 
 3. **Set up secrets for development**
+   
+   **Option 1: Using Wrangler CLI (recommended for team development)**
    ```bash
    # Generate a secure JWT secret (minimum 32 characters)
    wrangler secret put JWT_SECRET --env development
    # Enter a secure random string when prompted
    ```
+   
+   **Option 2: Local development only (easier for individual development)**
+   
+   For local development only, you can add a development JWT secret directly in the `.dev.vars` file:
+   ```bash
+   # Create a .dev.vars file in the worker directory
+   echo "JWT_SECRET=your_development_jwt_secret_minimum_32_chars" > .dev.vars
+   ```
+   
+   Note: The `.dev.vars` file should be added to .gitignore to prevent committing secrets.
 
 4. **Create required Cloudflare resources**
    ```bash
