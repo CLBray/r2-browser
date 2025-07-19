@@ -76,6 +76,54 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
           onClick: () => loadDirectory(path)
         });
       }
+      
+      // Show sample data for development purposes
+      console.log('Using sample data for development');
+      setDirectoryListing({
+        objects: [
+          {
+            key: 'sample-file-1.txt',
+            name: 'sample-file-1.txt',
+            size: 1024,
+            lastModified: new Date(),
+            etag: 'sample-etag-1',
+            type: 'file',
+            mimeType: 'text/plain'
+          },
+          {
+            key: 'sample-file-2.jpg',
+            name: 'sample-file-2.jpg',
+            size: 2048,
+            lastModified: new Date(),
+            etag: 'sample-etag-2',
+            type: 'file',
+            mimeType: 'image/jpeg'
+          },
+          {
+            key: 'sample-file-3.pdf',
+            name: 'sample-file-3.pdf',
+            size: 3072,
+            lastModified: new Date(),
+            etag: 'sample-etag-3',
+            type: 'file',
+            mimeType: 'application/pdf'
+          }
+        ],
+        folders: [
+          {
+            prefix: 'sample-folder-1/',
+            name: 'sample-folder-1',
+            type: 'folder'
+          },
+          {
+            prefix: 'sample-folder-2/',
+            name: 'sample-folder-2',
+            type: 'folder'
+          }
+        ],
+        currentPath: path,
+        hasMore: false
+      });
     } finally {
       setIsLoading(false);
     }
