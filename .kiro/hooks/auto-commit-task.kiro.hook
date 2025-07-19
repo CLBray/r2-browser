@@ -4,13 +4,10 @@
   "description": "Automatically commits changes to the git repository whenever a task is completed with a commit message of what was changed as part of the task. Commit not only new files, but commit all files. Once commited locally, then push to remote as well.",
   "version": "1",
   "when": {
-    "type": "fileEdited",
-    "patterns": [
-      "**/*"
-    ]
+    "type": "taskCompleted"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "A task has been completed and files have been modified. Please commit all new files, updated files and deleted files to the git repository with an appropriate commit message that describes what was accomplished. After committing locally, push to remote as well."
+    "prompt": "A task has been completed and files have been modified. Please commit all new files, updated files and deleted files to the git repository with an appropriate commit message that describes what was accomplished. Make sure to use 'git add .' to stage all changes. After committing locally, push to remote as well."
   }
 }

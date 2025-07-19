@@ -36,7 +36,6 @@ inclusion: always
 ## Security & Performance
 - Never store credentials in browser storage
 - JWT sessions with KV storage backend
-- Proper CORS headers for cross-origin requests
 - Streaming uploads for large files
 - Virtual scrolling for large lists
 - Bundle optimization with tree shaking
@@ -48,10 +47,12 @@ inclusion: always
 - Graceful network failure handling with retry logic
 
 ## Testing
+- Always add new tests when adding new functionality via task execution
+- Always re-run the frontend, worker and integration tests before considering a task complete
 - **Workers**: Use Cloudflare Workers Vitest integration (`@cloudflare/vitest-pool-workers`)
 - **Unit Tests**: Test individual services and functions with real bindings
 - **Integration Tests**: Test complete API workflows using `SELF` fetcher
-- **Frontend**: Jest + React Testing Library
+- **Frontend**: Vitest + React Testing Library
 - **Isolated Storage**: Each test runs with isolated KV/R2 storage
 - **Real Runtime**: Tests run inside actual Workers runtime via Miniflare
 - **No Mocking**: Use real bindings instead of mocks for Workers tests

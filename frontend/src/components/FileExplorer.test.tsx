@@ -5,6 +5,29 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { apiClient } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
+// Mock FileList component to simplify testing
+vi.mock('./FileList', () => ({
+  FileList: ({ files, folders, isLoading }) => (
+    <div data-testid="file-list-mock">
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <div>
+          {folders.map(folder => (
+            <div key={folder.prefix} data-testid="folder-item">{folder.name}</div>
+          ))}
+          {files.map(file => (
+            <div key={file.key} data-testid="file-item">{file.name}</div>
+          ))}
+          {folders.length === 0 && files.length === 0 && (
+            <div>No files or folders</div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}));
+
 // Mock dependencies
 vi.mock('../services/api', () => ({
   apiClient: {
@@ -84,11 +107,16 @@ describe('FileExplorer', () => {
       expect(apiClient.listFiles).toHaveBeenCalled();
     });
     
+    // Should render the FileList component with data
+    expect(screen.getByTestId('file-list-mock')).toBeInTheDocument();
+    
     // Should display folders
+    expect(screen.getAllByTestId('folder-item').length).toBe(2);
     expect(screen.getByText('folder1')).toBeInTheDocument();
     expect(screen.getByText('folder2')).toBeInTheDocument();
     
     // Should display files
+    expect(screen.getAllByTestId('file-item').length).toBe(2);
     expect(screen.getByText('file1.txt')).toBeInTheDocument();
     expect(screen.getByText('file2.jpg')).toBeInTheDocument();
   });
@@ -111,7 +139,6 @@ describe('FileExplorer', () => {
     
     // Should display empty state message
     expect(screen.getByText('No files or folders')).toBeInTheDocument();
-    expect(screen.getByText('This directory is empty.')).toBeInTheDocument();
   });
   
   it('shows error alert when API call fails', async () => {

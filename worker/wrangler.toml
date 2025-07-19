@@ -11,7 +11,7 @@ name = "r2-file-explorer-api-dev"
 [env.development.assets]
 directory = "../frontend/dist"
 binding = "ASSETS"
-bucket = "file-explorer-assets-dev"
+#bucket = "file-explorer-assets-dev"
 
 # Development R2 bucket binding for file storage
 [[env.development.r2_buckets]]
@@ -21,8 +21,10 @@ bucket_name = "file-explorer-storage-dev"
 # Development KV namespace for session storage
 [[env.development.kv_namespaces]]
 binding = "KV_SESSIONS"
-id = "file-explorer-sessions-dev"
-preview_id = "file-explorer-sessions-dev-preview"
+id = "bfb16d1884344643901fd2c5d4deff36"
+#id = "file-explorer-sessions-dev"
+#preview_id = "file-explorer-sessions-dev-preview"
+preview_id = "f1cab526fd664bc2bdb09efa966065b9"
 
 # Development Analytics Engine binding for observability
 [[env.development.analytics_engine_datasets]]

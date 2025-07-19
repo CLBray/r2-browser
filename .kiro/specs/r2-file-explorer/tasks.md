@@ -96,7 +96,7 @@
   - Add view mode toggles (grid/list) and basic layout
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 13. Build file and folder listing functionality
+- [x] 13. Build file and folder listing functionality
   - Create FileList component with virtual scrolling for performance
   - Implement file/folder icons and metadata display (name, size, date)
   - Add sorting and filtering capabilities

@@ -4,9 +4,10 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Toolbar } from './Toolbar';
 import { Breadcrumb } from './Breadcrumb';
+import { FileList } from './FileList';
 import { performanceMonitor } from '../utils/performance-monitor';
 import { apiClient } from '../services/api';
-import { DirectoryListing, FileObject, FolderObject } from '../types';
+import type { DirectoryListing, FileObject, FolderObject } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { ErrorHandler } from '../utils/error-handler';
 
@@ -22,6 +23,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [navigationHistory, setNavigationHistory] = useState<string[]>(['']);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<'name' | 'size' | 'lastModified'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [filter, setFilter] = useState<string>('');
   
   const { isAuthenticated } = useAuth();
   
@@ -191,83 +195,56 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
           isLoading={isLoading}
         />
         
-        {/* Content area - placeholder for now */}
-        <div className="p-4">
+        {/* Content area with FileList component */}
+        <div>
           {isLoading ? (
-            <div className="flex justify-center items-center h-64">
+            <div className="flex justify-center items-center h-64 p-4">
               <div data-testid="loading-spinner" className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           ) : directoryListing ? (
-            <div className={`${viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4' : 'space-y-2'}`}>
-              {/* Folders */}
-              {directoryListing.folders.length === 0 && directoryListing.objects.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No files or folders</h3>
-                  <p className="mt-1 text-sm text-gray-500">This directory is empty.</p>
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      onClick={handleUpload}
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Upload files
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {directoryListing.folders.map((folder) => (
-                    <div 
-                      key={folder.prefix}
-                      onClick={() => handleFolderClick(folder)}
-                      className={`cursor-pointer ${
-                        viewMode === 'grid' 
-                          ? 'p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center' 
-                          : 'p-2 border rounded hover:bg-gray-50 flex items-center'
-                      }`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className={`${viewMode === 'grid' ? 'h-12 w-12' : 'h-6 w-6 mr-3'} text-yellow-500`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                      </svg>
-                      <span className={`${viewMode === 'grid' ? 'mt-2 text-center' : ''} truncate`}>{folder.name}</span>
-                    </div>
-                  ))}
-                  
-                  {/* Files - placeholder for now */}
-                  {directoryListing.objects.map((file) => (
-                    <div 
-                      key={file.key}
-                      onClick={() => handleFileClick(file)}
-                      className={`cursor-pointer ${
-                        viewMode === 'grid' 
-                          ? 'p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center' 
-                          : 'p-2 border rounded hover:bg-gray-50 flex items-center'
-                      }`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className={`${viewMode === 'grid' ? 'h-12 w-12' : 'h-6 w-6 mr-3'} text-blue-500`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <div className={`${viewMode === 'grid' ? 'mt-2 text-center' : 'flex-grow'}`}>
-                        <div className="truncate">{file.name}</div>
-                        {viewMode === 'list' && (
-                          <div className="text-xs text-gray-500">
-                            {new Intl.NumberFormat().format(file.size)} bytes • {new Date(file.lastModified).toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
+            <FileList
+              files={directoryListing.objects}
+              folders={directoryListing.folders}
+              viewMode={viewMode}
+              onFileClick={handleFileClick}
+              onFolderClick={handleFolderClick}
+              isLoading={isLoading}
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onSortChange={(newSortBy, newDirection) => {
+                setSortBy(newSortBy);
+                setSortDirection(newDirection);
+                
+                // Track sort change
+                performanceMonitor.trackUserInteraction(
+                  'sort_change',
+                  0,
+                  true,
+                  { 
+                    sortBy: newSortBy,
+                    direction: newDirection,
+                    itemCount: directoryListing.objects.length + directoryListing.folders.length
+                  }
+                );
+              }}
+              filter={filter}
+              onFilterChange={(newFilter) => {
+                setFilter(newFilter);
+                
+                // Track filter change
+                performanceMonitor.trackUserInteraction(
+                  'filter_change',
+                  0,
+                  true,
+                  { 
+                    filter: newFilter,
+                    itemCount: directoryListing.objects.length + directoryListing.folders.length
+                  }
+                );
+              }}
+            />
           ) : (
-            <div className="text-center py-12">
+            <div className="text-center py-12 p-4">
               <p className="text-gray-500">No data available. Please try refreshing.</p>
             </div>
           )}
