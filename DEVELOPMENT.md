@@ -39,6 +39,10 @@ The R2 File Explorer uses an integrated development approach where the frontend 
    # Edit the file to add your JWT secret
    ```
 
+   Available environment variables:
+   - `JWT_SECRET`: Secret key for JWT token generation and validation (in .dev.vars)
+   - `LOG_LEVEL`: Logging level (debug, info, warn, error) - set to "debug" for verbose logging (in wrangler.toml)
+
 ### Development Workflow
 
 1. **Start the integrated development environment**:
@@ -175,6 +179,43 @@ If you prefer to run the frontend and worker separately:
    # Make sure JWT_SECRET is set in worker/.dev.vars
    echo "JWT_SECRET=your_secret_here" > worker/.dev.vars
    ```
+
+### Debugging
+
+#### Enabling Debug Logging
+
+To enable debug logging in the worker:
+
+1. Set the `LOG_LEVEL` environment variable to `debug` in the `wrangler.toml` file:
+   ```toml
+   [env.development.vars]
+   LOG_LEVEL = "debug"
+   ```
+
+2. For production or staging environments, you can set different log levels:
+   ```toml
+   [env.production.vars]
+   LOG_LEVEL = "error"  # Only show errors in production
+   
+   [env.staging.vars]
+   LOG_LEVEL = "info"   # Show info and errors in staging
+   ```
+
+3. When running the worker, you'll see detailed debug logs in the console, including:
+   - API requests and responses
+   - Authentication events
+   - File operations
+   - Performance metrics
+
+#### Using the Browser DevTools
+
+1. When running the worker with `npm run dev:worker`, press `d` in the terminal to open the DevTools.
+2. You can also click the link that appears in the terminal to open the DevTools in your browser.
+3. The DevTools provide access to:
+   - Console logs
+   - Network requests
+   - Performance metrics
+   - Storage (KV, R2)
 
 ### Getting Help
 

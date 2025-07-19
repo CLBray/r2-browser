@@ -125,6 +125,14 @@ export class Logger {
    * Creates and logs a structured log entry
    */
   private log(level: LogLevel, message: string, context: Record<string, any> = {}): void {
+    // Check if we should log this level based on environment variable
+    const logLevel = (this.env?.LOG_LEVEL || 'info').toLowerCase();
+    
+    // Only log if the current level is equal to or higher priority than the configured level
+    if (!this.shouldLog(level, logLevel as LogLevel)) {
+      return;
+    }
+    
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -152,6 +160,20 @@ export class Logger {
         console.error(JSON.stringify(entry));
         break;
     }
+  }
+  
+  /**
+   * Determines if a log entry should be output based on the configured log level
+   */
+  private shouldLog(messageLevel: LogLevel, configuredLevel: LogLevel): boolean {
+    const levels = {
+      [LogLevel.DEBUG]: 0,
+      [LogLevel.INFO]: 1,
+      [LogLevel.WARN]: 2,
+      [LogLevel.ERROR]: 3
+    };
+    
+    return levels[messageLevel] >= levels[configuredLevel as LogLevel] || configuredLevel === LogLevel.DEBUG;
   }
 }
 /*

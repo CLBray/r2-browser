@@ -11,6 +11,7 @@ name = "r2-file-explorer-api-dev"
 [env.development.assets]
 directory = "../frontend/dist"
 binding = "ASSETS"
+# Uncomment the line below if you want to use an R2 bucket for assets instead of local files
 #bucket = "file-explorer-assets-dev"
 
 # Development R2 bucket binding for file storage
@@ -22,8 +23,6 @@ bucket_name = "file-explorer-storage-dev"
 [[env.development.kv_namespaces]]
 binding = "KV_SESSIONS"
 id = "bfb16d1884344643901fd2c5d4deff36"
-#id = "file-explorer-sessions-dev"
-#preview_id = "file-explorer-sessions-dev-preview"
 preview_id = "f1cab526fd664bc2bdb09efa966065b9"
 
 # Development Analytics Engine binding for observability
@@ -36,6 +35,7 @@ dataset = "r2_file_explorer_analytics_dev"
 JWT_EXPIRY_HOURS = "24"
 MAX_FILE_SIZE_MB = "50"
 ENVIRONMENT = "development"
+LOG_LEVEL = "debug"
 
 # Note: JWT_SECRET should be set via one of these methods:
 # 1. For local development: Add to .dev.vars file (already created)

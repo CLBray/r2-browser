@@ -9,6 +9,7 @@ export interface Bindings {
   JWT_EXPIRY_HOURS: string
   MAX_FILE_SIZE_MB: string
   ENVIRONMENT: string
+  LOG_LEVEL?: string
 }
 
 export interface FileObject {
