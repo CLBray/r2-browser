@@ -41,7 +41,7 @@ The R2 File Explorer uses an integrated development approach where the frontend 
 
    Available environment variables:
    - `JWT_SECRET`: Secret key for JWT token generation and validation (in .dev.vars)
-   - `LOG_LEVEL`: Logging level (debug, info, warn, error) - set to "debug" for verbose logging (in wrangler.toml)
+
 
 ### Development Workflow
 

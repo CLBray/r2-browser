@@ -204,8 +204,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   
   // Initial load
   useEffect(() => {
+    console.log('FileExplorer component mounted');
+    console.log('isAuthenticated:', isAuthenticated);
+    
     if (isAuthenticated) {
+      console.log('Loading directory...');
       loadDirectory('');
+    } else {
+      console.log('Not authenticated, skipping directory load');
     }
   }, [isAuthenticated, loadDirectory]);
   

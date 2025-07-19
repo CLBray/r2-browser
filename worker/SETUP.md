@@ -48,7 +48,12 @@
    wrangler kv:namespace create "KV_SESSIONS" --env development --preview
    
    # Update wrangler.toml with the generated KV namespace IDs
-   ```
+   # NOTE: Why Namespace IDs Are Safe to Commit
+   #  KV namespace IDs are public identifiers, not secrets because:
+   #     They're just database table identifiers
+   #     They don't grant access by themselves
+   #     Access control is handled by Cloudflare's account/API token system
+   #     They're needed for your Worker to know which KV namespace to use
 
 5. **Update wrangler.toml**
    - Replace the KV namespace IDs with the ones generated in step 4

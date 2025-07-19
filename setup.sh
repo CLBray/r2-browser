@@ -12,7 +12,7 @@ npm install
 # Install frontend dependencies
 echo "Installing frontend dependencies..."
 cd frontend
-npm install
+npm install --legacy-peer-deps
 cd ..
 
 # Install worker dependencies
