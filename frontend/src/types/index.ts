@@ -54,11 +54,63 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
+export interface UploadedPart {
+  partNumber: number;
+  etag: string;
+  size: number;
+}
+
 export interface UploadTask {
   id: string;
   file: File;
   path: string;
   progress: number;
-  status: 'pending' | 'uploading' | 'completed' | 'error';
+  status: 'pending' | 'uploading' | 'completed' | 'error' | 'canceled';
+  error?: string;
+  uploadId?: string; // For multipart uploads
+  parts?: UploadedPart[];
+  startTime?: number;
+  endTime?: number;
+  bytesUploaded: number;
+  uploadSpeed: number; // bytes per second
+  estimatedTimeRemaining?: number; // seconds
+}
+
+export interface UploadManagerState {
+  tasks: Record<string, UploadTask>;
+  totalFiles: number;
+  completedFiles: number;
+  failedFiles: number;
+  totalBytes: number;
+  uploadedBytes: number;
+  overallProgress: number;
+  status: 'idle' | 'uploading' | 'completed' | 'error';
+}
+
+export interface UploadResponse {
+  success: boolean;
+  uploaded?: string[];
+  errors?: Record<string, string>;
+  message?: string;
+}
+
+export interface MultipartCreateResponse {
+  success: boolean;
+  uploadId?: string;
+  key?: string;
+  error?: string;
+}
+
+export interface MultipartUploadPartResponse {
+  success: boolean;
+  partNumber?: number;
+  etag?: string;
+  error?: string;
+}
+
+export interface MultipartCompleteResponse {
+  success: boolean;
+  message?: string;
+  data?: { key: string };
   error?: string;
 }

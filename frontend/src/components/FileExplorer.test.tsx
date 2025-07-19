@@ -28,6 +28,34 @@ vi.mock('./FileList', () => ({
   )
 }));
 
+// Mock UploadZone component
+vi.mock('./UploadZone', () => ({
+  UploadZone: ({ currentPath, onUploadStart, onUploadComplete, disabled, className }) => (
+    <div data-testid="upload-zone-mock" className={className}>
+      <button 
+        onClick={() => onUploadStart([new File(['test'], 'test.txt')])}
+        disabled={disabled}
+      >
+        Mock Upload Button
+      </button>
+      <div>Current path: {currentPath}</div>
+    </div>
+  )
+}));
+
+// Mock UploadDialog component
+vi.mock('./UploadDialog', () => ({
+  UploadDialog: ({ isOpen, onClose, currentPath, onUploadComplete }) => (
+    isOpen ? (
+      <div data-testid="upload-dialog-mock">
+        <div>Upload Dialog for path: {currentPath}</div>
+        <button onClick={onClose} data-testid="close-dialog-button">Close</button>
+        <button onClick={onUploadComplete} data-testid="complete-upload-button">Complete Upload</button>
+      </div>
+    ) : null
+  )
+}));
+
 // Mock dependencies
 vi.mock('../services/api', () => ({
   apiClient: {
@@ -159,5 +187,17 @@ describe('FileExplorer', () => {
       'Failed to load directory: Failed to load directory',
       expect.any(Object)
     );
+  });
+  
+  it('shows upload zone in drag overlay', async () => {
+    render(<FileExplorer addAlert={mockAddAlert} />);
+    
+    // Wait for data to load
+    await waitFor(() => {
+      expect(apiClient.listFiles).toHaveBeenCalled();
+    });
+    
+    // Upload zone should be present in the drag overlay
+    expect(screen.getByTestId('upload-zone-mock')).toBeInTheDocument();
   });
 });

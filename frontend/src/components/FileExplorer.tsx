@@ -5,6 +5,8 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { Toolbar } from './Toolbar';
 import { Breadcrumb } from './Breadcrumb';
 import { FileList } from './FileList';
+import { UploadZone } from './UploadZone';
+import { UploadDialog } from './UploadDialog';
 import { performanceMonitor } from '../utils/performance-monitor';
 import { apiClient } from '../services/api';
 import type { DirectoryListing, FileObject, FolderObject } from '../types';
@@ -26,6 +28,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'lastModified'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filter, setFilter] = useState<string>('');
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState<boolean>(false);
   
   const { isAuthenticated } = useAuth();
   
@@ -138,10 +141,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   }, [addAlert]);
   
   // Handle upload
-  const handleUpload = useCallback(() => {
-    // Upload functionality will be implemented in a future task
-    if (addAlert) {
-      addAlert('info', 'Upload functionality will be implemented in a future task');
+  const handleUpload = useCallback((files?: File[]) => {
+    if (files && files.length > 0) {
+      // We'll implement the actual upload functionality in a later task
+      if (addAlert) {
+        addAlert('info', `Selected ${files.length} file(s) for upload. Upload functionality will be implemented in subsequent tasks.`);
+      }
+      console.log('Files selected for upload:', files);
+    } else {
+      // Show upload dialog
+      setIsUploadDialogOpen(true);
     }
   }, [addAlert]);
   
@@ -174,7 +183,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   
   return (
     <ErrorBoundary componentName="FileExplorer">
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow rounded-lg overflow-hidden file-explorer">
         {/* Toolbar */}
         <Toolbar
           currentPath={currentPath}
@@ -202,47 +211,103 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
               <div data-testid="loading-spinner" className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           ) : directoryListing ? (
-            <FileList
-              files={directoryListing.objects}
-              folders={directoryListing.folders}
-              viewMode={viewMode}
-              onFileClick={handleFileClick}
-              onFolderClick={handleFolderClick}
-              isLoading={isLoading}
-              sortBy={sortBy}
-              sortDirection={sortDirection}
-              onSortChange={(newSortBy, newDirection) => {
-                setSortBy(newSortBy);
-                setSortDirection(newDirection);
+            <>
+              {/* Wrap FileList with UploadZone for drag-and-drop functionality */}
+              <div className="relative">
+                <FileList
+                  files={directoryListing.objects}
+                  folders={directoryListing.folders}
+                  viewMode={viewMode}
+                  onFileClick={handleFileClick}
+                  onFolderClick={handleFolderClick}
+                  isLoading={isLoading}
+                  sortBy={sortBy}
+                  sortDirection={sortDirection}
+                  onSortChange={(newSortBy, newDirection) => {
+                    setSortBy(newSortBy);
+                    setSortDirection(newDirection);
+                    
+                    // Track sort change
+                    performanceMonitor.trackUserInteraction(
+                      'sort_change',
+                      0,
+                      true,
+                      { 
+                        sortBy: newSortBy,
+                        direction: newDirection,
+                        itemCount: directoryListing.objects.length + directoryListing.folders.length
+                      }
+                    );
+                  }}
+                  filter={filter}
+                  onFilterChange={(newFilter) => {
+                    setFilter(newFilter);
+                    
+                    // Track filter change
+                    performanceMonitor.trackUserInteraction(
+                      'filter_change',
+                      0,
+                      true,
+                      { 
+                        filter: newFilter,
+                        itemCount: directoryListing.objects.length + directoryListing.folders.length
+                      }
+                    );
+                  }}
+                />
                 
-                // Track sort change
-                performanceMonitor.trackUserInteraction(
-                  'sort_change',
-                  0,
-                  true,
-                  { 
-                    sortBy: newSortBy,
-                    direction: newDirection,
-                    itemCount: directoryListing.objects.length + directoryListing.folders.length
+                {/* Hidden UploadZone that becomes visible on drag */}
+                <div 
+                  className="absolute inset-0 bg-white bg-opacity-90 z-10 hidden" 
+                  id="drag-overlay"
+                >
+                  <UploadZone
+                    currentPath={currentPath}
+                    onUploadStart={handleUpload}
+                    onUploadComplete={() => loadDirectory(currentPath)}
+                    disabled={isLoading}
+                    className="h-full"
+                  />
+                </div>
+              </div>
+              
+              {/* Add drag-and-drop event listeners */}
+              <script dangerouslySetInnerHTML={{ __html: `
+                document.addEventListener('DOMContentLoaded', () => {
+                  const fileExplorer = document.querySelector('.file-explorer');
+                  const dragOverlay = document.getElementById('drag-overlay');
+                  
+                  if (fileExplorer && dragOverlay) {
+                    fileExplorer.addEventListener('dragenter', (e) => {
+                      e.preventDefault();
+                      dragOverlay.classList.remove('hidden');
+                    });
+                    
+                    dragOverlay.addEventListener('dragleave', (e) => {
+                      e.preventDefault();
+                      if (e.relatedTarget && !dragOverlay.contains(e.relatedTarget)) {
+                        dragOverlay.classList.add('hidden');
+                      }
+                    });
+                    
+                    dragOverlay.addEventListener('drop', () => {
+                      dragOverlay.classList.add('hidden');
+                    });
                   }
-                );
-              }}
-              filter={filter}
-              onFilterChange={(newFilter) => {
-                setFilter(newFilter);
-                
-                // Track filter change
-                performanceMonitor.trackUserInteraction(
-                  'filter_change',
-                  0,
-                  true,
-                  { 
-                    filter: newFilter,
-                    itemCount: directoryListing.objects.length + directoryListing.folders.length
-                  }
-                );
-              }}
-            />
+                });
+              `}} />
+              
+              {/* Upload Dialog */}
+              <UploadDialog
+                isOpen={isUploadDialogOpen}
+                onClose={() => setIsUploadDialogOpen(false)}
+                currentPath={currentPath}
+                onUploadComplete={() => {
+                  setIsUploadDialogOpen(false);
+                  loadDirectory(currentPath);
+                }}
+              />
+            </>
           ) : (
             <div className="text-center py-12 p-4">
               <p className="text-gray-500">No data available. Please try refreshing.</p>
