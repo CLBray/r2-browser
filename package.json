@@ -1,0 +1,29 @@
+{
+  "name": "r2-file-explorer",
+  "version": "1.0.0",
+  "description": "R2 File Explorer with Cloudflare Workers",
+  "scripts": {
+    "build:frontend": "cd frontend && npm run build",
+    "dev:worker": "cd worker && wrangler dev --assets ../frontend/dist",
+    "dev": "npm run build:frontend && npm run dev:worker",
+    "test": "npm run test:frontend && npm run test:worker",
+    "test:frontend": "cd frontend && npm test",
+    "test:worker": "cd worker && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/r2-file-explorer.git"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "r2",
+    "file-explorer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/r2-file-explorer/issues"
+  },
+  "homepage": "https://github.com/yourusername/r2-file-explorer#readme"
+}

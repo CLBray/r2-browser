@@ -63,7 +63,28 @@ r2-file-explorer/
 - Wrangler CLI (`npm install -g wrangler`)
 - Cloudflare account with R2 and Workers enabled
 
-### Frontend Setup
+### Integrated Development Setup (Recommended)
+
+This setup builds the frontend and serves it through the worker, which matches the production environment:
+
+```bash
+# Install dependencies for both frontend and worker
+cd frontend && npm install && cd ../worker && npm install && cd ..
+
+# Start the integrated development environment
+npm run dev
+```
+
+This will:
+1. Build the frontend
+2. Start the worker with the frontend assets
+3. Serve the application at `http://localhost:8787`
+
+### Separate Development Setup (Alternative)
+
+If you prefer to run the frontend and worker separately:
+
+#### Frontend Setup
 
 ```bash
 cd frontend
@@ -73,10 +94,11 @@ npm run dev
 
 The frontend will be available at `http://localhost:5173`
 
-### Worker Setup
+#### Worker Setup
 
 ```bash
 cd worker
+npm install
 wrangler dev
 ```
 
@@ -90,21 +112,32 @@ The Worker will be available at `http://localhost:8787`
 
 ## Development Commands
 
+### Root Project
+```bash
+npm run dev                    # Build frontend and start worker with frontend assets
+npm run build:frontend         # Build frontend only
+npm run dev:worker             # Start worker with frontend assets
+npm run test                   # Run all tests (frontend and worker)
+```
+
 ### Frontend
 ```bash
-npm run dev                    # Start development server
+cd frontend
+npm run dev                    # Start standalone frontend development server
 npm run build                  # Build for production
 npm run preview                # Preview production build
 npm run lint                   # Run ESLint
+npm test                       # Run frontend tests
 ```
 
 ### Worker
 ```bash
+cd worker
 npm install                    # Install dependencies
-npm run dev                    # Start local development
+npm run dev                    # Start standalone worker development server
 npm run type-check             # Check TypeScript types
-npm test                       # Run tests
-wrangler publish               # Deploy to production
+npm test                       # Run worker tests
+wrangler deploy                # Deploy to production
 ```
 
 ## Deployment

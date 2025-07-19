@@ -1,0 +1,4 @@
+JWT_SECRET=your_development_jwt_secret_replace_this_with_a_secure_random_string
+# Account ID: your_account_id
+# R2 Access Key: your_access_key
+# R2 Secret: your_secret_key
