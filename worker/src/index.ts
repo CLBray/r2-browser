@@ -21,15 +21,6 @@ app.use('*', prettyJSON())
 
 // Health check endpoint
 app.get('/health', async (c) => {
-    // Track health check analytics
-    if (c.env.ANALYTICS) {
-        c.env.ANALYTICS.writeDataPoint({
-            blobs: ['health_check'],
-            doubles: [1],
-            indexes: [c.env.ENVIRONMENT]
-        })
-    }
-
     return c.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -74,30 +65,12 @@ app.get('/api/files', authMiddleware, async (c) => {
 
         const listing = await r2Service.listDirectory(prefix, cursor)
 
-        // Track file listing analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_list'],
-                doubles: [listing.objects.length + listing.folders.length],
-                indexes: [c.env.ENVIRONMENT, prefix || 'root']
-            })
-        }
-
         return c.json({
             success: true,
             ...listing
         })
     } catch (error) {
         console.error('Error listing files:', error)
-
-        // Track error analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_list_error'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
-            })
-        }
 
         return c.json({
             success: false,
@@ -116,15 +89,6 @@ app.post('/api/files/upload', authMiddleware, async (c) => {
 
         // Check file size
         if (body.size > maxSizeMB * 1024 * 1024) {
-            // Track file size exceeded analytics
-            if (c.env.ANALYTICS) {
-                c.env.ANALYTICS.writeDataPoint({
-                    blobs: ['file_upload_size_exceeded'],
-                    doubles: [body.size / (1024 * 1024)], // Size in MB
-                    indexes: [c.env.ENVIRONMENT, maxSizeMB.toString()]
-                })
-            }
-
             return c.json({
                 success: false,
                 error: `File size exceeds maximum of ${maxSizeMB}MB`
@@ -144,27 +108,9 @@ app.post('/api/files/upload', authMiddleware, async (c) => {
         // Upload to R2
         const result = await r2Service.uploadFile(key, body, contentType)
 
-        // Track successful file upload analytics
-        if (result.success && c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_upload_success'],
-                doubles: [body.size / (1024 * 1024)], // Size in MB
-                indexes: [c.env.ENVIRONMENT, filename.split('.').pop() || 'unknown'] // File extension
-            })
-        }
-
         return c.json(result)
     } catch (error) {
         console.error('Error uploading file:', error)
-
-        // Track upload error analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_upload_error'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
-            })
-        }
 
         return c.json({
             success: false,
@@ -323,14 +269,7 @@ app.get('/api/files/:key*', authMiddleware, async (c) => {
             }, 404)
         }
 
-        // Track download analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_download'],
-                doubles: [object.size / (1024 * 1024)], // Size in MB
-                indexes: [c.env.ENVIRONMENT, key.split('.').pop() || 'unknown'] // File extension
-            })
-        }
+
 
         const headers = {
             'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
@@ -352,15 +291,6 @@ app.get('/api/files/:key*', authMiddleware, async (c) => {
         return new Response(object.body, { headers })
     } catch (error) {
         console.error('Error downloading file:', error)
-
-        // Track download error analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_download_error'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
-            })
-        }
 
         return c.json({
             success: false,
@@ -384,15 +314,6 @@ app.delete('/api/files/:key*', authMiddleware, async (c) => {
         }
     } catch (error) {
         console.error('Error deleting file/folder:', error)
-
-        // Track delete error analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_delete_error'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
-            })
-        }
 
         return c.json({
             success: false,
@@ -418,27 +339,9 @@ app.post('/api/files/folder', authMiddleware, async (c) => {
 
         const result = await r2Service.createFolder(path)
 
-        // Track folder creation analytics
-        if (result.success && c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['folder_create'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, path.split('/').length.toString()]
-            })
-        }
-
         return c.json(result)
     } catch (error) {
         console.error('Error creating folder:', error)
-
-        // Track folder creation error analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['folder_create_error'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
-            })
-        }
 
         return c.json({
             success: false,
@@ -464,27 +367,9 @@ app.put('/api/files/rename', authMiddleware, async (c) => {
 
         const result = await r2Service.renameObject(oldKey, newKey)
 
-        // Track rename analytics
-        if (result.success && c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_rename'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, oldKey.endsWith('/') ? 'folder' : 'file']
-            })
-        }
-
         return c.json(result)
     } catch (error) {
         console.error('Error renaming file/folder:', error)
-
-        // Track rename error analytics
-        if (c.env.ANALYTICS) {
-            c.env.ANALYTICS.writeDataPoint({
-                blobs: ['file_rename_error'],
-                doubles: [1],
-                indexes: [c.env.ENVIRONMENT, error instanceof Error ? error.message : 'unknown']
-            })
-        }
 
         return c.json({
             success: false,

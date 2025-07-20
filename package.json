@@ -25,5 +25,11 @@
   "bugs": {
     "url": "https://github.com/yourusername/r2-file-explorer/issues"
   },
-  "homepage": "https://github.com/yourusername/r2-file-explorer#readme"
+  "homepage": "https://github.com/yourusername/r2-file-explorer#readme",
+  "dependencies": {
+    "@upstash/context7-mcp": "^1.0.14"
+  },
+  "devDependencies": {
+    "wrangler": "^4.25.0"
+  }
 }

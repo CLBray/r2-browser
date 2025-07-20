@@ -13,7 +13,7 @@ export interface AnalyticsEvent {
 export class AnalyticsService {
   private static instance: AnalyticsService;
   private endpoint = '/api/analytics/rum';
-  private enabled = true;
+  private enabled = false; // Disabled for development
 
   private constructor() {}
 

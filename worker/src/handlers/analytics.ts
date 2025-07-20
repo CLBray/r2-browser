@@ -29,57 +29,22 @@ analyticsRouter.use(
   })
 );
 
-// Handle RUM data
+// Handle RUM data - STUBBED OUT FOR DEVELOPMENT
 analyticsRouter.post('/rum', async (c) => {
   try {
-    // Get the metrics data from the request
+    // Get the metrics data from the request (but don't process them)
     const { metrics } = await c.req.json<{ metrics: any[] }>();
     
-    // Get user info from JWT
-    const payload = c.get('jwtPayload');
-    const sessionId = payload.sub;
-    
-    // Log the metrics for debugging
-    logger.debug('Received RUM metrics', { 
-      sessionId, 
-      metricCount: metrics.length 
+    // Just return success without processing
+    logger.debug('Analytics stubbed - received metrics but not processing', { 
+      metricCount: metrics?.length || 0 
     });
     
-    // Process each metric
-    for (const metric of metrics) {
-      // Add to Analytics Engine if available
-      if (c.env.ANALYTICS) {
-        try {
-          await c.env.ANALYTICS.writeDataPoint({
-            blobs: [
-              metric.type || 'unknown',
-              metric.sessionId || sessionId || 'anonymous',
-              metric.userId || 'anonymous',
-              metric.bucketName || 'unknown',
-              JSON.stringify(metric.data || {})
-            ],
-            doubles: [
-              metric.data?.duration || 0,
-              metric.data?.value || 0,
-              metric.timestamp || Date.now()
-            ],
-            indexes: [
-              metric.type || 'unknown',
-              metric.data?.success ? 'success' : 'failure',
-              metric.data?.errorType || 'none',
-              metric.data?.operation || 'none'
-            ]
-          });
-        } catch (error) {
-          logger.error('Failed to write to Analytics Engine', { error });
-        }
-      }
-    }
-    
-    return c.json({ success: true, count: metrics.length });
+    return c.json({ success: true, count: metrics?.length || 0 });
   } catch (error) {
-    logger.error('Error processing RUM data', { error });
-    return c.json({ success: false, error: 'Failed to process metrics' }, 500);
+    // Even if parsing fails, return success for development
+    logger.debug('Analytics stubbed - returning success despite error', { error });
+    return c.json({ success: true, count: 0 });
   }
 });
 

@@ -66,3 +66,6 @@ npm run dev         # Start React dev server
 npm test           # Run all tests
 npm run test:watch # Watch mode
 ```
+
+## Implementation best pratices and standards
+Review the Context7 documentation on Node web applications, Cloudflare Workers and Cloudflare R2, then use Sequential Thinking to plan and complete the task.

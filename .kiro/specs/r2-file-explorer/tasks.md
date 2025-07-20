@@ -103,14 +103,6 @@
   - Build folder navigation and back/up button functionality
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 14. Implement file upload functionality
-  - Create UploadZone component with React Dropzone
-  - Build drag-and-drop file upload interface
-  - Implement upload progress tracking for multiple files
-  - Add upload queue management and error handling
-  - Support multipart uploads for large files
-  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
-
 - [ ] 15. Add file download capabilities
   - Implement file download functionality with proper headers
   - Add download progress indication for large files

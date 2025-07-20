@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UploadZone } from './UploadZone';
 import { UploadProgressItem } from './UploadProgressItem';
+import { UploadManager } from './UploadManager';
 import { performanceMonitor } from '../utils/performance-monitor';
-import type { UploadTask } from '../types';
+import type { UploadTask, UploadManagerState } from '../types';
 
 interface UploadDialogProps {
   isOpen: boolean;
@@ -73,23 +74,11 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({
     };
   }, [isOpen, onClose, isUploading]);
 
+  // Files to be uploaded
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+
   // Handle file upload start
   const handleUploadStart = (files: File[]) => {
-    // Create upload tasks for each file
-    const newTasks = files.map(file => ({
-      id: `upload-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      file,
-      path: currentPath,
-      progress: 0,
-      status: 'pending' as const,
-      bytesUploaded: 0,
-      uploadSpeed: 0
-    }));
-
-    // Add new tasks to the list
-    setUploadTasks(prev => [...prev, ...newTasks]);
-    setIsUploading(true);
-
     // Track upload start in performance monitoring
     performanceMonitor.trackUserInteraction(
       'upload_dialog_files_added',
@@ -102,76 +91,44 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({
       }
     );
 
-    // In a real implementation, we would start the upload process here
-    // For now, we'll just simulate progress updates
-    simulateUploads(newTasks);
+    // Set files to be uploaded
+    setFilesToUpload(files);
+    setIsUploading(true);
   };
 
-  // Simulate upload progress for demonstration purposes
-  // This would be replaced with actual upload logic in a later task
-  const simulateUploads = (tasks: UploadTask[]) => {
-    tasks.forEach(task => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 10;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          
-          // Update task status to completed
-          setUploadTasks(prev => 
-            prev.map(t => 
-              t.id === task.id 
-                ? { 
-                    ...t, 
-                    progress: 100, 
-                    status: 'completed', 
-                    bytesUploaded: t.file.size,
-                    uploadSpeed: 0
-                  } 
-                : t
-            )
-          );
-
-          // Check if all tasks are complete
-          setUploadTasks(prev => {
-            const allComplete = prev.every(t => t.status === 'completed' || t.status === 'error');
-            if (allComplete) {
-              setIsUploading(false);
-              onUploadComplete();
-            }
-            return prev;
-          });
-        } else {
-          // Update task progress
-          setUploadTasks(prev => 
-            prev.map(t => 
-              t.id === task.id 
-                ? { 
-                    ...t, 
-                    progress, 
-                    status: 'uploading',
-                    bytesUploaded: Math.floor(t.file.size * (progress / 100)),
-                    uploadSpeed: Math.floor(Math.random() * 1000000) // Random speed for simulation
-                  } 
-                : t
-            )
-          );
-        }
-      }, 500);
-    });
+  // Handle upload progress updates from UploadManager
+  const handleUploadProgress = (state: UploadManagerState) => {
+    // Convert tasks from record to array for compatibility with existing code
+    const taskArray = Object.values(state.tasks);
+    setUploadTasks(taskArray);
+    
+    // Update uploading state based on overall status
+    if (state.status === 'completed') {
+      setIsUploading(false);
+    } else if (state.status === 'uploading') {
+      setIsUploading(true);
+    }
   };
 
-  // Handle task cancellation
+  // Handle upload completion
+  const handleUploadComplete = () => {
+    setIsUploading(false);
+    onUploadComplete();
+    // Clear files to upload
+    setFilesToUpload([]);
+  };
+
+  // Handle upload errors
+  const handleUploadError = (error: Error) => {
+    console.error('Upload error:', error);
+    // We don't need to set isUploading to false here
+    // as the UploadManager will report the overall status
+  };
+
+  // These functions will be handled by the UploadManager component
+  // We keep them as stubs for now to maintain compatibility with UploadProgressItem
   const handleCancelTask = (taskId: string) => {
-    setUploadTasks(prev => 
-      prev.map(t => 
-        t.id === taskId 
-          ? { ...t, status: 'canceled', progress: 0, uploadSpeed: 0 } 
-          : t
-      )
-    );
-
+    // This will be handled by UploadManager
     // Track cancel in performance monitoring
     performanceMonitor.trackUserInteraction(
       'upload_task_canceled',
@@ -181,29 +138,15 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({
     );
   };
 
-  // Handle task retry
   const handleRetryTask = (taskId: string) => {
-    const task = uploadTasks.find(t => t.id === taskId);
-    if (task) {
-      setUploadTasks(prev => 
-        prev.map(t => 
-          t.id === taskId 
-            ? { ...t, status: 'pending', progress: 0, bytesUploaded: 0, uploadSpeed: 0 } 
-            : t
-        )
-      );
-
-      // Track retry in performance monitoring
-      performanceMonitor.trackUserInteraction(
-        'upload_task_retry',
-        0,
-        true,
-        { taskId }
-      );
-
-      // Simulate upload for the retried task
-      simulateUploads([{ ...task, status: 'pending', progress: 0, bytesUploaded: 0, uploadSpeed: 0 }]);
-    }
+    // This will be handled by UploadManager
+    // Track retry in performance monitoring
+    performanceMonitor.trackUserInteraction(
+      'upload_task_retry',
+      0,
+      true,
+      { taskId }
+    );
   };
 
   // Calculate overall progress
@@ -258,15 +201,10 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({
   // Handle cancel all uploads
   const handleCancelAll = () => {
     if (window.confirm('Are you sure you want to cancel all uploads?')) {
-      setUploadTasks(prev => 
-        prev.map(t => 
-          t.status === 'uploading' || t.status === 'pending'
-            ? { ...t, status: 'canceled', progress: 0, uploadSpeed: 0 }
-            : t
-        )
-      );
-      setIsUploading(false);
-
+      // This will be handled by UploadManager
+      // We'll just clear the files to upload
+      setFilesToUpload([]);
+      
       // Track cancel all in performance monitoring
       performanceMonitor.trackUserInteraction(
         'upload_cancel_all',
@@ -321,6 +259,17 @@ export const UploadDialog: React.FC<UploadDialogProps> = ({
           />
         </div>
 
+        {/* Upload Manager */}
+        {filesToUpload.length > 0 && (
+          <UploadManager
+            files={filesToUpload}
+            currentPath={currentPath}
+            onComplete={handleUploadComplete}
+            onError={handleUploadError}
+            onProgress={handleUploadProgress}
+          />
+        )}
+        
         {/* Upload tasks list */}
         <div className="flex-1 overflow-y-auto p-6">
           <h3 className="text-sm font-medium text-gray-700 mb-2">
