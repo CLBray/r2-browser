@@ -79,15 +79,17 @@ const App: React.FC = () => {
   }, []);
   
   return (
-    <QueryProvider>
-      <AuthProvider>
-        <Router>
-          <ErrorBoundary componentName="AppRoutes">
-            <AppRoutes />
-          </ErrorBoundary>
-        </Router>
-      </AuthProvider>
-    </QueryProvider>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-indigo-50">
+      <QueryProvider>
+        <AuthProvider>
+          <Router>
+            <ErrorBoundary componentName="AppRoutes">
+              <AppRoutes />
+            </ErrorBoundary>
+          </Router>
+        </AuthProvider>
+      </QueryProvider>
+    </div>
   );
 };
 

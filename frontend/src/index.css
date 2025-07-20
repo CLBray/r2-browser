@@ -6,10 +6,221 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  
+  /* Custom Color Palette - Fresh & Fun Design System */
+  --color-brand-primary: #0ea5e9; /* sky-500 */
+  --color-brand-secondary: #6366f1; /* indigo-500 */
+  --color-brand-accent: #8b5cf6; /* violet-500 */
+  --color-brand-success: #10b981; /* emerald-500 */
+  --color-brand-warning: #f59e0b; /* amber-500 */
+  --color-brand-error: #ef4444; /* red-500 */
+  
+  /* Gradient Definitions */
+  --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); /* sky to indigo */
+  --gradient-secondary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); /* indigo to violet */
+  --gradient-accent: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); /* violet to pink */
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%); /* emerald gradient */
+  
+  /* Background Gradients */
+  --gradient-bg-primary: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%); /* sky-50 to indigo-50 */
+  --gradient-bg-secondary: linear-gradient(135deg, #faf5ff 0%, #fdf2f8 100%); /* violet-50 to pink-50 */
+  
+  /* File Type Colors */
+  --color-file-folder: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); /* sky gradient */
+  --color-file-image: linear-gradient(135deg, #ec4899 0%, #db2777 100%); /* pink gradient */
+  --color-file-document: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); /* indigo gradient */
+  --color-file-video: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); /* violet gradient */
+  --color-file-audio: linear-gradient(135deg, #10b981 0%, #059669 100%); /* emerald gradient */
+  --color-file-archive: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); /* amber gradient */
+  --color-file-default: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); /* gray gradient */
+  
+  /* Shadow Colors */
+  --shadow-primary: rgba(14, 165, 233, 0.15); /* sky with opacity */
+  --shadow-secondary: rgba(99, 102, 241, 0.15); /* indigo with opacity */
+  --shadow-accent: rgba(139, 92, 246, 0.15); /* violet with opacity */
+  --shadow-success: rgba(16, 185, 129, 0.15); /* emerald with opacity */
+  
+  /* Animation Timing */
+  --timing-fast: 150ms;
+  --timing-normal: 200ms;
+  --timing-slow: 300ms;
+  --timing-extra-slow: 500ms;
+  
+  /* Easing Functions */
+  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: #f8fafc;
+/* Base Layer Enhancements */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--gradient-bg-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Enhanced focus styles for accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  
+  /* Smooth transitions for reduced motion users */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Component Layer - Reusable Design Patterns */
+@layer components {
+  /* Modern Card Component */
+  .card {
+    @apply bg-white rounded-xl shadow-soft border border-gray-100;
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .card:hover {
+    @apply shadow-soft-lg transform scale-[1.02];
+  }
+  
+  /* Gradient Button Base */
+  .btn-gradient {
+    @apply relative overflow-hidden rounded-lg font-medium;
+    @apply transition-all duration-200 ease-out;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-gradient:hover {
+    @apply transform scale-105 shadow-lg;
+  }
+  
+  .btn-gradient:active {
+    @apply transform scale-95;
+  }
+  
+  /* Primary Gradient Button */
+  .btn-primary {
+    @apply btn-gradient bg-gradient-to-r from-sky-500 to-indigo-500;
+    @apply text-white shadow-lg;
+    @apply hover:from-sky-600 hover:to-indigo-600;
+    @apply focus:ring-sky-500;
+  }
+  
+  /* Secondary Gradient Button */
+  .btn-secondary {
+    @apply btn-gradient bg-gradient-to-r from-indigo-500 to-violet-500;
+    @apply text-white shadow-lg;
+    @apply hover:from-indigo-600 hover:to-violet-600;
+    @apply focus:ring-indigo-500;
+  }
+  
+  /* Success Gradient Button */
+  .btn-success {
+    @apply btn-gradient bg-gradient-to-r from-emerald-500 to-emerald-600;
+    @apply text-white shadow-lg;
+    @apply hover:from-emerald-600 hover:to-emerald-700;
+    @apply focus:ring-emerald-500;
+  }
+  
+  /* Floating Element Base */
+  .floating {
+    @apply bg-white/80 backdrop-blur-sm rounded-xl;
+    @apply shadow-soft border border-white/20;
+  }
+  
+  /* File Type Icon Base */
+  .file-icon {
+    @apply w-12 h-12 rounded-lg flex items-center justify-center;
+    @apply shadow-sm text-white font-medium;
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .file-icon:hover {
+    @apply transform scale-110 shadow-md;
+  }
+  
+  /* Animated Loading State */
+  .loading-shimmer {
+    @apply relative overflow-hidden bg-gray-200 rounded;
+  }
+  
+  .loading-shimmer::after {
+    @apply absolute inset-0;
+    content: '';
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    );
+    animation: shimmer 2s linear infinite;
+  }
+}
+
+/* Utility Layer - Custom Utilities */
+@layer utilities {
+  /* Gradient Text */
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-secondary {
+    background: var(--gradient-secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Custom Scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+  
+  /* Animation Utilities */
+  .animate-scale-in {
+    animation: scale-in var(--timing-normal) var(--ease-out-cubic);
+  }
+  
+  .animate-slide-up {
+    animation: slide-up var(--timing-slow) var(--ease-out-cubic);
+  }
+  
+  .animate-bounce-gentle {
+    animation: bounce-gentle 2s infinite;
+  }
 }
