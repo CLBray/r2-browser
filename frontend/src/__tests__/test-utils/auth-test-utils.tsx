@@ -1,9 +1,8 @@
 // Shared test utilities for authentication testing
 
 import React from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { vi } from 'vitest';
-import { AuthProvider } from '../../contexts/AuthContext';
 import { AuthContext, type AuthContextType } from '../../contexts/auth';
 import type { R2Credentials, AuthSession, ApiResponse } from '../../types';
 
@@ -105,7 +104,7 @@ export const createMockAuthSession = (overrides: Partial<AuthSession> = {}): Aut
 });
 
 // Helper function to create mock API response
-export const createMockApiResponse = <T>(
+export const createMockApiResponse = <T,>(
   data?: T, 
   success: boolean = true, 
   error?: string
