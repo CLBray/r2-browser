@@ -50,7 +50,7 @@ app.route('/api/analytics', analyticsRouter)
 // Authentication routes
 app.post('/api/auth/login', loginHandler)
 app.post('/api/auth/logout', logoutHandler)
-app.post('/api/auth/verify', verifyHandler)
+app.get('/api/auth/verify', verifyHandler)
 app.post('/api/auth/refresh', refreshHandler)
 
 // Create R2 service instance for each request
