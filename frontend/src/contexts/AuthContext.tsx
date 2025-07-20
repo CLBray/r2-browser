@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         clearTimeout(refreshTimer);
       }
     };
-  }, [clearAuthState, setupRefreshTimer]);
+  }, []); // Only run once on mount
 
   // Login function
   const login = async (credentials: R2Credentials) => {

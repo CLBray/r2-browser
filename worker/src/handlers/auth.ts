@@ -149,9 +149,8 @@ export const verifyHandler = async (c: Context<{ Bindings: Bindings }>) => {
     const authHeader = c.req.header('Authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return c.json({
-        success: false,
-        error: 'Bad Request',
-        message: 'No token provided'
+        valid: false,
+        error: 'No token provided'
       }, 400)
     }
 
@@ -163,9 +162,8 @@ export const verifyHandler = async (c: Context<{ Bindings: Bindings }>) => {
 
     if (!sessionData) {
       return c.json({
-        success: false,
-        error: 'Unauthorized',
-        message: 'Invalid or expired token'
+        valid: false,
+        error: 'Invalid or expired token'
       }, 401)
     }
 
@@ -179,14 +177,10 @@ export const verifyHandler = async (c: Context<{ Bindings: Bindings }>) => {
     }
 
     return c.json({
-      success: true,
-      data: {
-        valid: true,
-        bucketName: sessionData.credentials.bucketName,
-        expiresAt: sessionData.expiresAt,
-        userId: sessionData.userId
-      },
-      message: 'Token is valid'
+      valid: true,
+      bucketName: sessionData.credentials.bucketName,
+      expiresAt: sessionData.expiresAt,
+      userId: sessionData.userId
     })
   } catch (error) {
     console.error('Verify handler error:', error)
@@ -201,9 +195,8 @@ export const verifyHandler = async (c: Context<{ Bindings: Bindings }>) => {
     }
 
     return c.json({
-      success: false,
-      error: 'Internal Server Error',
-      message: 'Token verification failed'
+      valid: false,
+      error: 'Token verification failed'
     }, 500)
   }
 }

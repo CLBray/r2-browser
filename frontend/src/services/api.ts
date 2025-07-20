@@ -282,12 +282,12 @@ class ApiClient {
     }
   }
 
-  async downloadFile(key: string): Promise<Blob> {
+  async downloadFile(key: string, onProgress?: (loaded: number, total: number) => void): Promise<Blob> {
     try {
       // Use retry logic for downloads
       return await ErrorHandler.withRetry(
         async () => {
-          const response = await fetch(`${API_BASE_URL}/api/files/download?key=${encodeURIComponent(key)}`, {
+          const response = await fetch(`${API_BASE_URL}/api/files/${encodeURIComponent(key)}`, {
             headers: {
               ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
               'X-Request-ID': this.generateRequestId()
@@ -313,7 +313,99 @@ class ApiClient {
             throw enhancedError;
           }
 
+          // Handle progress tracking if callback provided
+          if (onProgress && response.body) {
+            const contentLength = response.headers.get('Content-Length');
+            const total = contentLength ? parseInt(contentLength, 10) : 0;
+            
+            if (total > 0) {
+              const reader = response.body.getReader();
+              const chunks: Uint8Array[] = [];
+              let loaded = 0;
+
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  
+                  if (done) break;
+                  
+                  chunks.push(value);
+                  loaded += value.length;
+                  onProgress(loaded, total);
+                }
+                
+                // Combine all chunks into a single Uint8Array
+                const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+                const result = new Uint8Array(totalLength);
+                let offset = 0;
+                
+                for (const chunk of chunks) {
+                  result.set(chunk, offset);
+                  offset += chunk.length;
+                }
+                
+                return new Blob([result]);
+              } finally {
+                reader.releaseLock();
+              }
+            }
+          }
+
           return response.blob();
+        },
+        3, // Max retries
+        1000, // Base delay
+        10000, // Max delay
+        (error) => {
+          // Only retry network errors and server errors (5xx)
+          const apiError = ErrorHandler.parseApiError(error);
+          return ErrorHandler.isRetryable(apiError);
+        }
+      );
+    } catch (error) {
+      // Convert to ApiError and throw
+      const apiError = ErrorHandler.parseApiError(error);
+      throw apiError;
+    }
+  }
+
+  async downloadFileWithRange(key: string, start: number, end?: number): Promise<{ blob: Blob; contentRange: string | null }> {
+    try {
+      const rangeHeader = end !== undefined ? `bytes=${start}-${end}` : `bytes=${start}-`;
+      
+      return await ErrorHandler.withRetry(
+        async () => {
+          const response = await fetch(`${API_BASE_URL}/api/files/${encodeURIComponent(key)}`, {
+            headers: {
+              ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+              'Range': rangeHeader,
+              'X-Request-ID': this.generateRequestId()
+            },
+          });
+
+          if (!response.ok && response.status !== 206) {
+            const errorData: ApiError = await response.json().catch(() => ({
+              error: `Range download failed with status ${response.status}`,
+              code: ErrorCode.DOWNLOAD_FAILED,
+            }));
+            
+            // Enhance error with HTTP status
+            const enhancedError: ApiError = {
+              ...errorData,
+              code: errorData.code || ErrorCode.DOWNLOAD_FAILED,
+              httpStatus: response.status
+            };
+            
+            // Log the error
+            ErrorHandler.logError(enhancedError, { key, range: rangeHeader });
+            
+            throw enhancedError;
+          }
+
+          const blob = await response.blob();
+          const contentRange = response.headers.get('Content-Range');
+          
+          return { blob, contentRange };
         },
         3, // Max retries
         1000, // Base delay

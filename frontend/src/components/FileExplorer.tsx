@@ -7,6 +7,7 @@ import { Breadcrumb } from './Breadcrumb';
 import { FileList } from './FileList';
 import { UploadZone } from './UploadZone';
 import { UploadDialog } from './UploadDialog';
+import { useDownloadManager } from './DownloadManager';
 import { performanceMonitor } from '../utils/performance-monitor';
 import { apiClient } from '../services/api';
 import type { DirectoryListing, FileObject, FolderObject } from '../types';
@@ -31,6 +32,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState<boolean>(false);
   
   const { isAuthenticated } = useAuth();
+  const { DownloadManagerComponent, downloadFile } = useDownloadManager();
   
   // Load directory contents
   const loadDirectory = useCallback(async (path: string) => {
@@ -77,50 +79,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
         });
       }
       
-      // Show sample data for development purposes
-      console.log('Using sample data for development');
+      // Set empty directory listing on error
       setDirectoryListing({
-        objects: [
-          {
-            key: 'sample-file-1.txt',
-            name: 'sample-file-1.txt',
-            size: 1024,
-            lastModified: new Date(),
-            etag: 'sample-etag-1',
-            type: 'file',
-            mimeType: 'text/plain'
-          },
-          {
-            key: 'sample-file-2.jpg',
-            name: 'sample-file-2.jpg',
-            size: 2048,
-            lastModified: new Date(),
-            etag: 'sample-etag-2',
-            type: 'file',
-            mimeType: 'image/jpeg'
-          },
-          {
-            key: 'sample-file-3.pdf',
-            name: 'sample-file-3.pdf',
-            size: 3072,
-            lastModified: new Date(),
-            etag: 'sample-etag-3',
-            type: 'file',
-            mimeType: 'application/pdf'
-          }
-        ],
-        folders: [
-          {
-            prefix: 'sample-folder-1/',
-            name: 'sample-folder-1',
-            type: 'folder'
-          },
-          {
-            prefix: 'sample-folder-2/',
-            name: 'sample-folder-2',
-            type: 'folder'
-          }
-        ],
+        objects: [],
+        folders: [],
         currentPath: path,
         hasMore: false
       });
@@ -176,9 +138,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   
   // Handle file click
   const handleFileClick = useCallback((file: FileObject) => {
-    // File click handling will be implemented in a future task
-    console.log('File clicked:', file);
+    // For now, clicking a file will download it
+    handleFileDownload(file);
   }, []);
+
+  // Handle file download
+  const handleFileDownload = useCallback((file: FileObject) => {
+    const taskId = downloadFile(file);
+    if (taskId && addAlert) {
+      addAlert('info', `Started downloading ${file.name}`, {
+        label: 'View Downloads',
+        onClick: () => {
+          // Download manager will already be visible
+        }
+      });
+    }
+  }, [downloadFile, addAlert]);
   
   // Handle create folder
   const handleCreateFolder = useCallback(() => {
@@ -274,6 +249,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
                   viewMode={viewMode}
                   onFileClick={handleFileClick}
                   onFolderClick={handleFolderClick}
+                  onFileDownload={handleFileDownload}
                   isLoading={isLoading}
                   sortBy={sortBy}
                   sortDirection={sortDirection}
@@ -368,6 +344,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
             </div>
           )}
         </div>
+
+        {/* Download Manager */}
+        <DownloadManagerComponent />
       </div>
     </ErrorBoundary>
   );

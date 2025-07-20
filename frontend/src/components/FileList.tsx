@@ -11,6 +11,7 @@ interface FileListProps {
   viewMode: 'grid' | 'list';
   onFileClick: (file: FileObject) => void;
   onFolderClick: (folder: FolderObject) => void;
+  onFileDownload?: (file: FileObject) => void;
   isLoading: boolean;
   sortBy: 'name' | 'size' | 'lastModified';
   sortDirection: 'asc' | 'desc';
@@ -25,6 +26,7 @@ export const FileList: React.FC<FileListProps> = ({
   viewMode,
   onFileClick,
   onFolderClick,
+  onFileDownload,
   isLoading,
   sortBy,
   sortDirection,
@@ -182,6 +184,13 @@ export const FileList: React.FC<FileListProps> = ({
     };
   }, [filteredItems.length, rowVirtualizer, viewMode]);
   
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    item: (typeof filteredItems)[0];
+  } | null>(null);
+
   // Handle item click
   const handleItemClick = (item: (typeof filteredItems)[0]) => {
     if (item.itemType === 'folder') {
@@ -190,6 +199,41 @@ export const FileList: React.FC<FileListProps> = ({
       onFileClick(item as FileObject);
     }
   };
+
+  // Handle context menu
+  const handleContextMenu = (e: React.MouseEvent, item: (typeof filteredItems)[0]) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      item,
+    });
+  };
+
+  // Handle download
+  const handleDownload = (file: FileObject) => {
+    if (onFileDownload) {
+      onFileDownload(file);
+    }
+    setContextMenu(null);
+  };
+
+  // Close context menu
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu) {
+        closeContextMenu();
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [contextMenu]);
   
   // Get appropriate icon for file type
   const getFileIcon = (file: FileObject) => {
@@ -378,6 +422,7 @@ export const FileList: React.FC<FileListProps> = ({
                   <div 
                     className="p-2 border rounded hover:bg-gray-50 flex items-center cursor-pointer"
                     onClick={() => handleItemClick(item)}
+                    onContextMenu={(e) => handleContextMenu(e, item)}
                   >
                     {item.itemType === 'folder' ? (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -417,6 +462,7 @@ export const FileList: React.FC<FileListProps> = ({
                         key={`${item.itemType}-${item.itemType === 'folder' ? item.prefix : item.key}`}
                         className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center cursor-pointer"
                         onClick={() => handleItemClick(item)}
+                        onContextMenu={(e) => handleContextMenu(e, item)}
                       >
                         {item.itemType === 'folder' ? (
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -443,6 +489,43 @@ export const FileList: React.FC<FileListProps> = ({
           })}
         </div>
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+        >
+          {contextMenu.item.itemType === 'file' && onFileDownload && (
+            <button
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center"
+              onClick={() => handleDownload(contextMenu.item as FileObject)}
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              Download
+            </button>
+          )}
+          {contextMenu.item.itemType === 'folder' && (
+            <button
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center"
+              onClick={() => {
+                handleItemClick(contextMenu.item);
+                closeContextMenu();
+              }}
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              Open Folder
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

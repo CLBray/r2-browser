@@ -114,3 +114,38 @@ export interface MultipartCompleteResponse {
   data?: { key: string };
   error?: string;
 }
+
+export interface DownloadTask {
+  id: string;
+  key: string;
+  fileName: string;
+  fileSize: number;
+  progress: number;
+  status: 'pending' | 'downloading' | 'completed' | 'error' | 'canceled' | 'paused';
+  error?: string;
+  startTime?: number;
+  endTime?: number;
+  bytesDownloaded: number;
+  downloadSpeed: number; // bytes per second
+  estimatedTimeRemaining?: number; // seconds
+  resumable: boolean;
+  chunks?: DownloadChunk[];
+}
+
+export interface DownloadChunk {
+  start: number;
+  end: number;
+  downloaded: boolean;
+  data?: Blob;
+}
+
+export interface DownloadManagerState {
+  tasks: Record<string, DownloadTask>;
+  totalFiles: number;
+  completedFiles: number;
+  failedFiles: number;
+  totalBytes: number;
+  downloadedBytes: number;
+  overallProgress: number;
+  status: 'idle' | 'downloading' | 'completed' | 'error';
+}
