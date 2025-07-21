@@ -118,17 +118,17 @@ export const AuthForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center min-h-full py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
             Connect to your R2 Bucket
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Enter your Cloudflare R2 credentials to access your files
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6 bg-white/50 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/20" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label htmlFor="accountId" className="block text-sm font-medium text-gray-700">
@@ -141,9 +141,9 @@ export const AuthForm: React.FC = () => {
                 required
                 value={credentials.accountId}
                 onChange={handleChange('accountId')}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.accountId ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                className={`mt-1 appearance-none relative block w-full px-4 py-3 border ${
+                  validationErrors.accountId ? 'border-red-300' : 'border-gray-200'
+                } placeholder-gray-400 text-gray-900 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:z-10 sm:text-sm transition-all duration-200`}
                 placeholder="Your Cloudflare Account ID"
               />
               {validationErrors.accountId && (
@@ -164,9 +164,9 @@ export const AuthForm: React.FC = () => {
                 required
                 value={credentials.accessKeyId}
                 onChange={handleChange('accessKeyId')}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.accessKeyId ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                className={`mt-1 appearance-none relative block w-full px-4 py-3 border ${
+                  validationErrors.accessKeyId ? 'border-red-300' : 'border-gray-200'
+                } placeholder-gray-400 text-gray-900 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:z-10 sm:text-sm transition-all duration-200`}
                 placeholder="R2 Access Key ID"
               />
               {validationErrors.accessKeyId && (
@@ -188,9 +188,9 @@ export const AuthForm: React.FC = () => {
                   required
                   value={credentials.secretAccessKey}
                   onChange={handleChange('secretAccessKey')}
-                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                    validationErrors.secretAccessKey ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm pr-10`}
+                  className={`mt-1 appearance-none relative block w-full px-4 py-3 border ${
+                    validationErrors.secretAccessKey ? 'border-red-300' : 'border-gray-200'
+                  } placeholder-gray-400 text-gray-900 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:z-10 sm:text-sm pr-12 transition-all duration-200`}
                   placeholder="R2 Secret Access Key"
                 />
                 <button
@@ -229,9 +229,9 @@ export const AuthForm: React.FC = () => {
                 required
                 value={credentials.bucketName}
                 onChange={handleChange('bucketName')}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.bucketName ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                className={`mt-1 appearance-none relative block w-full px-4 py-3 border ${
+                  validationErrors.bucketName ? 'border-red-300' : 'border-gray-200'
+                } placeholder-gray-400 text-gray-900 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:z-10 sm:text-sm transition-all duration-200`}
                 placeholder="R2 Bucket Name"
               />
               {validationErrors.bucketName && (
@@ -244,7 +244,7 @@ export const AuthForm: React.FC = () => {
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-xl bg-gradient-to-r from-red-50 to-red-100 border border-red-200 p-4 shadow-sm">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -263,7 +263,7 @@ export const AuthForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading || authLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-lg"
             >
               {isLoading || authLoading ? (
                 <>
@@ -284,7 +284,7 @@ export const AuthForm: React.FC = () => {
               href="https://developers.cloudflare.com/r2/api/s3/tokens/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-sm bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent hover:from-sky-700 hover:to-indigo-700 transition-all duration-200"
             >
               Need help finding your R2 credentials?
             </a>

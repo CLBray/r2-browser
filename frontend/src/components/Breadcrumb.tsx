@@ -26,7 +26,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ path, onNavigate, isLoad
   }, [segments]);
 
   return (
-    <nav className="flex py-3 px-2" aria-label="Breadcrumb">
+    <nav className="flex py-4 px-4 bg-white/30 backdrop-blur-sm border-b border-gray-100" aria-label="Breadcrumb">
       <ol className="flex items-center space-x-1 md:space-x-2 flex-wrap">
         {breadcrumbItems.map((item, index) => (
           <li key={item.path || 'home'} className="flex items-center">
@@ -38,10 +38,10 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ path, onNavigate, isLoad
             <button
               onClick={() => onNavigate(item.path)}
               disabled={isLoading || (index === breadcrumbItems.length - 1)}
-              className={`ml-1 text-sm font-medium ${
+              className={`ml-1 text-sm font-medium px-2 py-1 rounded-lg transition-all duration-200 ${
                 index === breadcrumbItems.length - 1
-                  ? 'text-gray-700 cursor-default'
-                  : 'text-blue-600 hover:text-blue-800'
+                  ? 'text-gray-700 cursor-default bg-white/50'
+                  : 'bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent hover:from-sky-700 hover:to-indigo-700 hover:bg-sky-50 hover:bg-clip-border hover:text-sky-700'
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               aria-current={index === breadcrumbItems.length - 1 ? 'page' : undefined}
             >

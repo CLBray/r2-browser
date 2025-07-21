@@ -136,7 +136,7 @@ export const FileList: React.FC<FileListProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => viewMode === 'grid' ? 120 : 48, // Estimated row height
+    estimateSize: () => viewMode === 'grid' ? 160 : 80, // Increased height for card design
     overscan: 5, // Number of items to render outside of the visible area
   });
   
@@ -235,55 +235,78 @@ export const FileList: React.FC<FileListProps> = ({
     return () => document.removeEventListener('click', handleClickOutside);
   }, [contextMenu]);
   
-  // Get appropriate icon for file type
+  // Get appropriate icon for file type with modern colorful design
   const getFileIcon = (file: FileObject) => {
     const mimeType = file.mimeType || '';
     
     if (mimeType.startsWith('image/')) {
       return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-400 to-pink-500 flex items-center justify-center shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
       );
     }
     
     if (mimeType.startsWith('video/')) {
       return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-        </svg>
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-400 to-violet-500 flex items-center justify-center shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        </div>
       );
     }
     
     if (mimeType.startsWith('audio/')) {
       return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-        </svg>
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </div>
       );
     }
     
     if (mimeType.includes('pdf')) {
       return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-400 to-indigo-500 flex items-center justify-center shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
       );
     }
     
     if (mimeType.includes('zip') || mimeType.includes('compressed') || mimeType.includes('archive')) {
       return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-        </svg>
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+        </div>
       );
     }
     
     // Default file icon
     return (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
+      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      </div>
+    );
+  };
+
+  // Get folder icon with modern colorful design
+  const getFolderIcon = () => {
+    return (
+      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+      </div>
     );
   };
   
@@ -303,19 +326,19 @@ export const FileList: React.FC<FileListProps> = ({
     return new Date(date).toLocaleString();
   };
   
-  // Render sorting controls
+  // Render sorting controls with modern design
   const renderSortControls = () => {
     return (
-      <div className="flex items-center mb-2 px-2">
-        <div className="text-sm text-gray-500 mr-2">Sort by:</div>
+      <div className="flex items-center mb-6 px-2">
+        <div className="text-sm text-gray-600 mr-3 font-medium">Sort by:</div>
         <div className="flex space-x-2">
           {['name', 'size', 'lastModified'].map((option) => (
             <button
               key={option}
-              className={`px-2 py-1 text-xs rounded ${
+              className={`px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
                 sortBy === option 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-md' 
+                  : 'bg-white text-gray-700 hover:bg-sky-50 hover:text-sky-700 border border-gray-200 hover:border-sky-300'
               }`}
               onClick={() => {
                 if (sortBy === option) {
@@ -340,8 +363,8 @@ export const FileList: React.FC<FileListProps> = ({
         <div className="ml-auto">
           <input
             type="text"
-            placeholder="Filter..."
-            className="px-2 py-1 text-sm border rounded"
+            placeholder="Filter files..."
+            className="px-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200"
             value={filter}
             onChange={(e) => onFilterChange(e.target.value)}
           />
@@ -350,36 +373,38 @@ export const FileList: React.FC<FileListProps> = ({
     );
   };
   
-  // Render empty state
+  // Render empty state with modern design
   if (filteredItems.length === 0) {
     return (
-      <div className="p-4">
+      <div className="p-6">
         {renderSortControls()}
-        <div className="text-center py-12">
+        <div className="text-center py-16">
           {filter ? (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No results found</h3>
-              <p className="mt-1 text-sm text-gray-500">No files or folders match your filter.</p>
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => onFilterChange('')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Clear filter
-                </button>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No results found</h3>
+              <p className="text-gray-600 mb-6">No files or folders match your filter criteria.</p>
+              <button
+                type="button"
+                onClick={() => onFilterChange('')}
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-medium rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+              >
+                Clear filter
+              </button>
             </>
           ) : (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No files or folders</h3>
-              <p className="mt-1 text-sm text-gray-500">This directory is empty.</p>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-100 to-indigo-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No files or folders</h3>
+              <p className="text-gray-600">This directory is empty. Upload some files to get started!</p>
             </>
           )}
         </div>
@@ -388,13 +413,13 @@ export const FileList: React.FC<FileListProps> = ({
   }
   
   return (
-    <div className="p-4">
+    <div className="p-6">
       {renderSortControls()}
       
       <div 
         ref={parentRef}
         className="overflow-auto"
-        style={{ height: 'calc(100vh - 200px)', width: '100%' }}
+        style={{ height: 'calc(100vh - 240px)', width: '100%' }}
       >
         <div
           style={{
@@ -413,31 +438,30 @@ export const FileList: React.FC<FileListProps> = ({
               return (
                 <div
                   key={`${item.itemType}-${item.itemType === 'folder' ? item.prefix : item.key}`}
-                  className="absolute top-0 left-0 w-full"
+                  className="absolute top-0 left-0 w-full px-2"
                   style={{
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
                   <div 
-                    className="p-2 border rounded hover:bg-gray-50 flex items-center cursor-pointer"
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] hover:border-sky-200"
                     onClick={() => handleItemClick(item)}
                     onContextMenu={(e) => handleContextMenu(e, item)}
                   >
-                    {item.itemType === 'folder' ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                      </svg>
-                    ) : (
-                      <span className="mr-3">{getFileIcon(item as FileObject)}</span>
-                    )}
+                    <div className="mr-4">
+                      {item.itemType === 'folder' ? getFolderIcon() : getFileIcon(item as FileObject)}
+                    </div>
                     
-                    <div className="flex-grow">
-                      <div className="truncate">{item.name}</div>
+                    <div className="flex-grow min-w-0">
+                      <div className="font-medium text-gray-900 truncate">{item.name}</div>
                       {item.itemType === 'file' && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-sm text-gray-500 mt-1">
                           {formatFileSize((item as FileObject).size)} • {formatDate((item as FileObject).lastModified)}
                         </div>
+                      )}
+                      {item.itemType === 'folder' && (
+                        <div className="text-sm text-gray-500 mt-1">Folder</div>
                       )}
                     </div>
                   </div>
@@ -450,7 +474,7 @@ export const FileList: React.FC<FileListProps> = ({
               return (
                 <div
                   key={virtualRow.index}
-                  className="absolute top-0 left-0 w-full"
+                  className="absolute top-0 left-0 w-full px-2"
                   style={{
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
@@ -460,24 +484,23 @@ export const FileList: React.FC<FileListProps> = ({
                     {rowItems.map((item) => (
                       <div
                         key={`${item.itemType}-${item.itemType === 'folder' ? item.prefix : item.key}`}
-                        className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center cursor-pointer"
+                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col items-center cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 hover:border-sky-200"
                         onClick={() => handleItemClick(item)}
                         onContextMenu={(e) => handleContextMenu(e, item)}
                       >
-                        {item.itemType === 'folder' ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                          </svg>
-                        ) : (
-                          getFileIcon(item as FileObject)
-                        )}
+                        <div className="mb-3">
+                          {item.itemType === 'folder' ? getFolderIcon() : getFileIcon(item as FileObject)}
+                        </div>
                         
-                        <div className="mt-2 text-center">
-                          <div className="truncate max-w-full">{item.name}</div>
+                        <div className="text-center w-full">
+                          <div className="font-medium text-gray-900 truncate text-sm">{item.name}</div>
                           {item.itemType === 'file' && (
-                            <div className="text-xs text-gray-500 truncate">
+                            <div className="text-xs text-gray-500 mt-1 truncate">
                               {formatFileSize((item as FileObject).size)}
                             </div>
+                          )}
+                          {item.itemType === 'folder' && (
+                            <div className="text-xs text-gray-500 mt-1">Folder</div>
                           )}
                         </div>
                       </div>
@@ -490,10 +513,10 @@ export const FileList: React.FC<FileListProps> = ({
         </div>
       </div>
 
-      {/* Context Menu */}
+      {/* Context Menu with modern design */}
       {contextMenu && (
         <div
-          className="fixed bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50"
+          className="fixed bg-white border border-gray-200 rounded-xl shadow-xl py-2 z-50 min-w-[160px]"
           style={{
             left: contextMenu.x,
             top: contextMenu.y,
@@ -501,26 +524,30 @@ export const FileList: React.FC<FileListProps> = ({
         >
           {contextMenu.item.itemType === 'file' && onFileDownload && (
             <button
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center"
+              className="w-full px-4 py-3 text-left text-sm hover:bg-sky-50 hover:text-sky-700 flex items-center transition-colors duration-150 font-medium"
               onClick={() => handleDownload(contextMenu.item as FileObject)}
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-              </svg>
+              <div className="w-5 h-5 mr-3 rounded bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+              </div>
               Download
             </button>
           )}
           {contextMenu.item.itemType === 'folder' && (
             <button
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center"
+              className="w-full px-4 py-3 text-left text-sm hover:bg-sky-50 hover:text-sky-700 flex items-center transition-colors duration-150 font-medium"
               onClick={() => {
                 handleItemClick(contextMenu.item);
                 closeContextMenu();
               }}
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
+              <div className="w-5 h-5 mr-3 rounded bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+              </div>
               Open Folder
             </button>
           )}

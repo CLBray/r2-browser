@@ -212,7 +212,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ addAlert }) => {
   
   return (
     <ErrorBoundary componentName="FileExplorer">
-      <div className="bg-white shadow rounded-lg overflow-hidden file-explorer">
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl overflow-hidden file-explorer border border-white/20">
         {/* Toolbar */}
         <Toolbar
           currentPath={currentPath}

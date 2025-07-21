@@ -150,7 +150,7 @@ describe('FileList Component', () => {
     // Instead, we'll test that the filter input works
     render(<FileList {...defaultProps} />);
     
-    const filterInput = screen.getByPlaceholderText('Filter...');
+    const filterInput = screen.getByPlaceholderText('Filter files...');
     expect(filterInput).toBeInTheDocument();
     
     // Change the filter
@@ -175,7 +175,7 @@ describe('FileList Component', () => {
     render(<FileList {...defaultProps} filter="nonexistent" />);
     
     expect(screen.getByText('No results found')).toBeInTheDocument();
-    expect(screen.getByText('No files or folders match your filter.')).toBeInTheDocument();
+    expect(screen.getByText('No files or folders match your filter criteria.')).toBeInTheDocument();
     
     // Check for clear filter button
     const clearButton = screen.getByText('Clear filter');
@@ -190,7 +190,7 @@ describe('FileList Component', () => {
     render(<FileList {...defaultProps} files={[]} folders={[]} />);
     
     expect(screen.getByText('No files or folders')).toBeInTheDocument();
-    expect(screen.getByText('This directory is empty.')).toBeInTheDocument();
+    expect(screen.getByText('This directory is empty. Upload some files to get started!')).toBeInTheDocument();
   });
 
   it('changes sort when sort buttons are clicked', () => {
@@ -210,7 +210,7 @@ describe('FileList Component', () => {
   it('updates filter when filter input changes', () => {
     render(<FileList {...defaultProps} />);
     
-    const filterInput = screen.getByPlaceholderText('Filter...');
+    const filterInput = screen.getByPlaceholderText('Filter files...');
     fireEvent.change(filterInput, { target: { value: 'test' } });
     
     expect(defaultProps.onFilterChange).toHaveBeenCalledWith('test');
