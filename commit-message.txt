@@ -1,6 +1,0 @@
-chore: track package-lock.json files
-
-- Add root package-lock.json to git tracking
-- Update worker package-lock.json
-
-Package lock files are essential for dependency consistency across environments and team members.
