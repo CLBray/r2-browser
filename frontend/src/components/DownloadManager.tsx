@@ -35,6 +35,7 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
 
   const activeDownloads = useRef<Set<string>>(new Set());
   const downloadQueue = useRef<string[]>([]);
+  const processQueueRef = useRef<(() => Promise<void>) | null>(null);
 
   // Generate unique task ID
   const generateTaskId = useCallback(() => {
@@ -88,26 +89,19 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
     }));
   }, []);
 
-  // Process download queue
-  const processQueue = useCallback(async () => {
-    while (downloadQueue.current.length > 0 && activeDownloads.current.size < MAX_CONCURRENT_DOWNLOADS) {
-      const taskId = downloadQueue.current.shift();
-      if (!taskId) continue;
-
-      activeDownloads.current.add(taskId);
-      
-      // Start download in background
-      downloadFile(taskId).finally(() => {
-        activeDownloads.current.delete(taskId);
-        processQueue(); // Process next item in queue
-      });
-    }
-  }, []);
-
   // Download file with progress tracking and resumable support
-  const downloadFile = useCallback(async (taskId: string) => {
-    const task = state.tasks[taskId];
-    if (!task) return;
+  const downloadFileInternal = useCallback(async (taskId: string) => {
+    // Get the current task from state
+    let task: DownloadTask | undefined;
+    setState(prevState => {
+      task = prevState.tasks[taskId];
+      return prevState;
+    });
+
+    if (!task) {
+      console.error('Task not found:', taskId);
+      return;
+    }
 
     try {
       updateTask(taskId, { 
@@ -218,7 +212,29 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
         fileSize: task.fileSize,
       });
     }
-  }, [state.tasks, updateTask]);
+  }, [updateTask]);
+
+  // Process download queue
+  const processQueue = useCallback(async () => {
+    while (downloadQueue.current.length > 0 && activeDownloads.current.size < MAX_CONCURRENT_DOWNLOADS) {
+      const taskId = downloadQueue.current.shift();
+      if (!taskId) continue;
+
+      activeDownloads.current.add(taskId);
+      
+      // Start download in background
+      downloadFileInternal(taskId).finally(() => {
+        activeDownloads.current.delete(taskId);
+        // Process next item in queue without recursion
+        if (downloadQueue.current.length > 0 && processQueueRef.current) {
+          setTimeout(() => processQueueRef.current?.(), 0);
+        }
+      });
+    }
+  }, []);
+
+  // Store the processQueue function in ref to avoid circular dependency
+  processQueueRef.current = processQueue;
 
   // Add download task
   const addDownload = useCallback((file: FileObject) => {
@@ -244,10 +260,10 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
     }));
 
     downloadQueue.current.push(taskId);
-    processQueue();
+    processQueueRef.current?.();
 
     return taskId;
-  }, [generateTaskId, processQueue]);
+  }, [generateTaskId]);
 
   // Retry download
   const retryDownload = useCallback((taskId: string) => {
@@ -262,8 +278,8 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
     });
 
     downloadQueue.current.push(taskId);
-    processQueue();
-  }, [state.tasks, updateTask, processQueue]);
+    processQueueRef.current?.();
+  }, [state.tasks, updateTask]);
 
   // Cancel download
   const cancelDownload = useCallback((taskId: string) => {
