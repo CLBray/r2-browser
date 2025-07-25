@@ -133,22 +133,24 @@ export function getFileType(mimeType?: string, fileName?: string): FileType {
     return 'code';
   }
   
-  // Document files
-  if (mime.includes('pdf') || mime.includes('document') || mime.includes('word') ||
-      ['pdf', 'doc', 'docx', 'rtf', 'odt', 'pages'].includes(extension)) {
-    return 'document';
-  }
-  
-  // Spreadsheet files
-  if (mime.includes('spreadsheet') || mime.includes('excel') ||
+  // Spreadsheet files (check before document to avoid conflicts)
+  if (mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('vnd.ms-excel') ||
+      mime.includes('vnd.openxmlformats-officedocument.spreadsheetml') ||
       ['xls', 'xlsx', 'csv', 'ods', 'numbers'].includes(extension)) {
     return 'spreadsheet';
   }
   
-  // Presentation files
-  if (mime.includes('presentation') || mime.includes('powerpoint') ||
+  // Presentation files (check before document to avoid conflicts)
+  if (mime.includes('presentation') || mime.includes('powerpoint') || mime.includes('vnd.ms-powerpoint') ||
+      mime.includes('vnd.openxmlformats-officedocument.presentationml') ||
       ['ppt', 'pptx', 'odp', 'key'].includes(extension)) {
     return 'presentation';
+  }
+  
+  // Document files
+  if (mime.includes('pdf') || mime.includes('document') || mime.includes('word') ||
+      ['pdf', 'doc', 'docx', 'rtf', 'odt', 'pages'].includes(extension)) {
+    return 'document';
   }
   
   // Text files
