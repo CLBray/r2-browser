@@ -106,9 +106,29 @@ The Worker will be available at `http://localhost:8787`
 
 ### Configuration
 
+#### Basic Configuration
+
 1. Update `worker/wrangler.toml` with your Cloudflare account details
 2. Create R2 bucket and KV namespace in your Cloudflare dashboard
 3. Update the binding names in wrangler.toml to match your resources
+
+#### Security Configuration (Required)
+
+The application requires encryption keys for secure credential storage. 
+
+**🔧 Quick Setup:**
+```bash
+cd worker
+./scripts/setup-secrets.sh
+```
+
+**📖 For complete security setup instructions, see [SECURITY.md](SECURITY.md)**
+
+This covers:
+- Required environment variables (`JWT_SECRET`, `CREDENTIAL_ENCRYPTION_KEY`)
+- Local development and production configuration
+- Key generation and security best practices
+- Troubleshooting and emergency procedures
 
 ## Development Commands
 

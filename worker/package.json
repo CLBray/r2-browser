@@ -19,7 +19,11 @@
     "logs": "wrangler tail",
     "logs:staging": "wrangler tail --env staging",
     "logs:production": "wrangler tail --env production",
-    "setup:secrets": "echo 'Run: wrangler secret put JWT_SECRET' && echo 'Enter a secure 32+ character string'",
+    "setup:secrets": "./scripts/setup-secrets.sh",
+    "setup:secrets:local": "./scripts/setup-secrets.sh local",
+    "setup:secrets:staging": "./scripts/setup-secrets.sh staging",
+    "setup:secrets:production": "./scripts/setup-secrets.sh production",
+    "generate:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
     "setup:resources": "echo 'Creating R2 bucket...' && wrangler r2 bucket create file-explorer-storage-dev && echo 'Creating KV namespace...' && wrangler kv:namespace create KV_SESSIONS",
     "clean": "rm -rf node_modules dist .wrangler && npm install"
   },

@@ -48,7 +48,16 @@ inclusion: always
 
 ## Testing
 - Always add new tests when adding new functionality via task execution
+- Always re-run the unit tests before considering a task complete
 - Always re-run the frontend, worker and integration tests before considering a task complete
+- Before marking a task complete, pause and ask if there are any adjustments that need to be made to the codebase
+- Before marking a task complete, draft a detailed commit message that includes:
+   - What task was completed
+   - What files were changed as part of the task
+   - Brief description of the changes made
+- Then, pause and request manual review of the commit message
+- Then, commit all staged changes with this approved commit message
+- Then, push the commit to the remote repository
 - **Workers**: Use Cloudflare Workers Vitest integration (`@cloudflare/vitest-pool-workers`)
 - **Unit Tests**: Test individual services and functions with real bindings
 - **Integration Tests**: Test complete API workflows using `SELF` fetcher

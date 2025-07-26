@@ -8,7 +8,10 @@
     "dev": "npm run build:frontend && npm run dev:worker",
     "test": "npm run test:frontend && npm run test:worker",
     "test:frontend": "cd frontend && npm test",
-    "test:worker": "cd worker && npm test"
+    "test:worker": "cd worker && npm test",
+    "setup:secrets": "cd worker && ./scripts/setup-secrets.sh",
+    "setup:secrets:local": "cd worker && ./scripts/setup-secrets.sh",
+    "generate:key": "cd worker && npm run generate:key"
   },
   "repository": {
     "type": "git",
