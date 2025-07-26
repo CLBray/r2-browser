@@ -20,7 +20,8 @@ export default defineWorkersConfig({
             JWT_SECRET: 'test-secret-key-that-is-long-enough-for-jwt',
             JWT_EXPIRY_HOURS: '24',
             MAX_FILE_SIZE_MB: '50',
-            ENVIRONMENT: 'test'
+            ENVIRONMENT: 'test',
+            CREDENTIAL_ENCRYPTION_KEY: 'test-encryption-key-32-chars-long-for-aes256'
           }
         }
       }

@@ -94,26 +94,35 @@ export class MasterKeyManager {
   async getAllValidationKeys(): Promise<Array<{ key: string; version: number }>> {
     const keys: Array<{ key: string; version: number }> = []
     
-    try {
-      // Check version 1 (primary key)
-      const key1 = await this.getKeyByVersion(1)
-      if (key1) {
-        keys.push({ key: key1, version: 1 })
-      }
-      
-      // Check version 2 (backup key)
-      if (this.backupKey) {
-        const key2 = await this.getKeyByVersion(2)
-        if (key2) {
-          keys.push({ key: key2, version: 2 })
-        }
-      }
-      
-      return keys
-    } catch (error) {
-      console.error('Failed to get validation keys:', error)
-      return keys.length > 0 ? keys : [{ key: this.primaryKey, version: 1 }]
+    // Check version 1 (primary key)
+    const key1 = await this.getKeyByVersion(1)
+    if (key1) {
+      keys.push({ key: key1, version: 1 })
     }
+    
+    // Check version 2 (backup key)
+    if (this.backupKey) {
+      const key2 = await this.getKeyByVersion(2)
+      if (key2) {
+        keys.push({ key: key2, version: 2 })
+      }
+    }
+    
+    // If no keys were retrieved, it could be due to KV errors or all keys being revoked
+    // We need to distinguish between these cases
+    if (keys.length === 0) {
+      // Try to check if we can access KV at all by checking metadata
+      try {
+        await this.kv.get('key_metadata:1')
+        // If we get here, KV is working, so keys must be revoked
+        return []
+      } catch (error) {
+        // KV is not working, return primary key as fallback
+        return [{ key: this.primaryKey, version: 1 }]
+      }
+    }
+    
+    return keys
   }
 
   /**
@@ -180,6 +189,10 @@ export class MasterKeyManager {
       console.log(`Key version ${version} has been revoked`)
     } catch (error) {
       console.error(`Failed to revoke key version ${version}:`, error)
+      // Re-throw the original error if it's a "not found" error
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw error
+      }
       throw new Error(`Failed to revoke key version ${version}`)
     }
   }
@@ -279,6 +292,10 @@ export class MasterKeyManager {
       }
     } catch (error) {
       console.error('Failed to get key metadata:', error)
+      // Re-throw the original error if it's a "not found" error
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw error
+      }
       throw new Error('Failed to retrieve key metadata')
     }
   }
