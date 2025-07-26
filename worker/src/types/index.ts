@@ -10,6 +10,8 @@ export interface Bindings {
   MAX_FILE_SIZE_MB: string
   ENVIRONMENT: string
   LOG_LEVEL?: string
+  CREDENTIAL_ENCRYPTION_KEY: string
+  CREDENTIAL_ENCRYPTION_KEY_BACKUP?: string
 }
 
 export interface FileObject {
@@ -90,9 +92,29 @@ export interface SessionData {
   createdAt: number
 }
 
+export interface EncryptedSessionData {
+  userId: string
+  encryptedCredentials: EncryptedCredentials
+  expiresAt: number
+  createdAt: number
+}
+
 export interface JWTPayload {
   userId: string
   sessionId: string
   exp: number
   iat: number
+}
+
+export interface EncryptedCredentials {
+  encryptedData: string
+  iv: string
+  authTag: string
+  keyVersion: number
+}
+
+export interface CredentialEncryption {
+  encrypt(credentials: AuthCredentials, sessionId: string): Promise<EncryptedCredentials>
+  decrypt(encryptedData: EncryptedCredentials, sessionId: string): Promise<AuthCredentials>
+  rotateEncryptionKey(): Promise<void>
 }

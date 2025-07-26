@@ -1,16 +1,19 @@
 import jwt from '@tsndr/cloudflare-worker-jwt'
 import { v4 as uuidv4 } from 'uuid'
-import type { AuthCredentials, SessionData, JWTPayload, Bindings } from '../types'
+import type { AuthCredentials, SessionData, EncryptedSessionData, JWTPayload, Bindings } from '../types'
+import { CredentialEncryptionService } from './credential-encryption'
 
 export class AuthService {
   private kv: KVNamespace
   private jwtSecret: string
   private jwtExpiryHours: number
+  private encryptionService: CredentialEncryptionService
 
   constructor(bindings: Bindings) {
     this.kv = bindings.KV_SESSIONS
     this.jwtSecret = bindings.JWT_SECRET
     this.jwtExpiryHours = parseInt(bindings.JWT_EXPIRY_HOURS) || 24
+    this.encryptionService = new CredentialEncryptionService(bindings)
   }
 
   /**
@@ -60,23 +63,31 @@ export class AuthService {
     const now = Date.now()
     const expiresAt = now + (this.jwtExpiryHours * 60 * 60 * 1000)
 
-    // Create session data
-    const sessionData: SessionData = {
-      userId,
-      credentials,
-      expiresAt,
-      createdAt: now
+    try {
+      // Encrypt credentials before storing
+      const encryptedCredentials = await this.encryptionService.encrypt(credentials, sessionId)
+
+      // Create encrypted session data
+      const encryptedSessionData: EncryptedSessionData = {
+        userId,
+        encryptedCredentials,
+        expiresAt,
+        createdAt: now
+      }
+
+      // Store encrypted session in KV
+      await this.kv.put(`session:${sessionId}`, JSON.stringify(encryptedSessionData), {
+        expirationTtl: this.jwtExpiryHours * 60 * 60 // TTL in seconds
+      })
+
+      // Generate JWT token
+      const token = await this.generateJWT(userId, sessionId)
+
+      return { token, expiresAt }
+    } catch (error) {
+      console.error('Session creation failed:', error)
+      throw new Error('Failed to create secure session')
     }
-
-    // Store session in KV
-    await this.kv.put(`session:${sessionId}`, JSON.stringify(sessionData), {
-      expirationTtl: this.jwtExpiryHours * 60 * 60 // TTL in seconds
-    })
-
-    // Generate JWT token
-    const token = await this.generateJWT(userId, sessionId)
-
-    return { token, expiresAt }
   }
 
   /**
@@ -100,16 +111,38 @@ export class AuthService {
         return null
       }
 
-      const sessionData: SessionData = JSON.parse(sessionDataStr)
+      const encryptedSessionData: EncryptedSessionData = JSON.parse(sessionDataStr)
       
       // Check if session is expired
-      if (sessionData.expiresAt < Date.now()) {
+      if (encryptedSessionData.expiresAt < Date.now()) {
         // Clean up expired session
         await this.kv.delete(sessionKey)
         return null
       }
 
-      return sessionData
+      try {
+        // Decrypt credentials
+        const credentials = await this.encryptionService.decrypt(
+          encryptedSessionData.encryptedCredentials, 
+          payload.sessionId
+        )
+
+        // Return decrypted session data
+        const sessionData: SessionData = {
+          userId: encryptedSessionData.userId,
+          credentials,
+          expiresAt: encryptedSessionData.expiresAt,
+          createdAt: encryptedSessionData.createdAt
+        }
+
+        return sessionData
+      } catch (decryptionError) {
+        console.error('Failed to decrypt session credentials:', decryptionError)
+        
+        // If decryption fails, invalidate the session for security
+        await this.kv.delete(sessionKey)
+        return null
+      }
     } catch (error) {
       console.error('Token validation error:', error)
       return null

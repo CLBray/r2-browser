@@ -2,34 +2,34 @@
 
 ## Phase 1: Critical Security (High Priority)
 
-- [ ] 1. Set up credential encryption infrastructure
+- [x] 1. Set up credential encryption infrastructure
   - Create CredentialEncryption service with Web Crypto API integration
   - Implement AES-256-GCM encryption with PBKDF2 key derivation
   - Add master key management through Cloudflare Worker secrets
   - Create unit tests for encryption/decryption functionality
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 1.1 Implement credential encryption service
+- [x] 1.1 Implement credential encryption service
   - Write CredentialEncryption class with encrypt/decrypt methods
   - Implement secure key derivation using PBKDF2 with 100,000 iterations
   - Add IV generation using crypto.getRandomValues()
   - Create error handling for encryption failures
   - _Requirements: 1.1, 1.3_
 
-- [ ] 1.2 Add master key management system
+- [x] 1.2 Add master key management system
   - Create MasterKeyManager class for Worker secret access
   - Implement key versioning for rotation support
   - Add fallback key handling for seamless rotation
   - Create key validation and security checks
   - _Requirements: 1.5_
 
-- [ ] 1.3 Update session storage to use encryption
+- [x] 1.3 Update session storage to use encryption
   - Modify AuthService.createSession to encrypt credentials before KV storage
   - Update AuthService.validateToken to decrypt credentials after KV retrieval
   - Implement graceful fallback for decryption failures
   - _Requirements: 1.1, 1.2, 1.4_
 
-- [ ] 1.4 Create encryption service unit tests
+- [x] 1.4 Create encryption service unit tests
   - Test encryption/decryption round-trip functionality
   - Test key derivation with different session IDs
   - Test error handling for invalid keys and corrupted data
