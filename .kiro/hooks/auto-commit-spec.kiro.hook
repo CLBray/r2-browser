@@ -11,6 +11,6 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "A spec file has been modified, indicating a task may have been completed. Please:\n\n1. Check if this represents a completed task by examining the spec file changes\n2. If a task was completed, stage ALL files in the repository (not just the spec file)\n3. Create a detailed commit message that includes:\n   - What task was completed\n   - What files were changed as part of the task\n   - Brief description of the changes made\n4. Commit all staged changes with this detailed message\n5. Push the commit to the remote repository\n\nUse git commands to accomplish this. Make sure to commit ALL files that have changes, not just the spec file that triggered this hook."
+    "prompt": "A spec file has been modified, indicating a task may have been completed. Please:\n\n1. Check if this represents a completed task by examining the spec file changes\n2. If a task was completed, stage ALL files in the repository (not just the spec file)\n3. Create a detailed commit message that includes:\n   - What task was completed\n   - What files were changed as part of the task\n   - Brief description of the changes made\n4. Draft a commit message for manual review\n4. Commit all staged changes with this approved commit message\n5. Push the commit to the remote repository\n\nUse git commands to accomplish this. Make sure to commit ALL files that have changes, not just the spec file that triggered this hook."
   }
 }
