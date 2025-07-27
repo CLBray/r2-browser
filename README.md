@@ -2,6 +2,39 @@
 
 A web-based file management application that provides a familiar desktop file manager interface for Cloudflare R2 buckets. Users can browse, upload, download, organize, and manage their R2 storage through an intuitive web interface.
 
+## ⚠️ IMPORTANT DISCLAIMER - PROOF OF CONCEPT
+
+**This application is a proof of concept and is NOT ready for production use.** The application was build utilzing a preview version of [Kiro](https://kiro.dev/) and the code has not been peer reviewed. Please read the following warnings carefully:
+
+### 🚨 Security Warnings
+- **Incomplete Security Implementation**: Authentication and authorization mechanisms are not fully implemented or tested
+- **Credential Handling**: The current credential storage and encryption may have vulnerabilities
+- **No Access Controls**: Missing proper user access controls and permission systems
+- **Unvalidated Inputs**: Input validation and sanitization may be incomplete
+- **Session Management**: Session handling and security measures are not production-ready
+
+### 🔧 Feature Limitations
+- **Incomplete Features**: Many advertised features are partially implemented or non-functional
+- **Error Handling**: Error handling and edge cases are not fully covered
+- **Performance**: Not optimized for production workloads or large-scale usage
+- **Data Loss Risk**: File operations may fail or cause data loss
+- **Browser Compatibility**: Limited testing across different browsers and devices
+
+### 🧪 Development Status
+- **Active Development**: This is an experimental project under active development
+- **Breaking Changes**: Expect frequent breaking changes and API modifications
+- **No Support**: No official support or maintenance guarantees
+- **Testing**: Insufficient testing coverage for production reliability
+
+### ⚖️ Usage Recommendations
+- **Development Only**: Use only in development or testing environments
+- **No Sensitive Data**: Do not use with sensitive or production data
+- **Backup Everything**: Always maintain backups of any data you work with
+- **Review Code**: Thoroughly review and audit the code before any usage
+- **Contribute**: Contributions to improve security and functionality are welcome
+
+**By using this application, you acknowledge these risks and limitations.**
+
 ## Features
 
 - **File Browser**: Navigate R2 buckets with familiar file explorer UI
@@ -56,6 +89,8 @@ r2-file-explorer/
 ```
 
 ## Setup Instructions
+
+⚠️ **Before You Begin**: This is a proof of concept application. Only use in development environments with non-sensitive data.
 
 ### Prerequisites
 
@@ -186,14 +221,36 @@ wrangler deploy --env production
 
 ## Authentication
 
+⚠️ **Security Notice**: The authentication system is incomplete and not secure for production use.
+
 The application requires Cloudflare R2 API credentials:
 - Account ID
 - Access Key ID
 - Secret Access Key
 - Bucket Name
 
-These credentials are used to authenticate with the R2 API and are not stored permanently.
+**Important**: While these credentials are intended not to be stored permanently, the current implementation may have security vulnerabilities. Do not use with production credentials or sensitive data.
+
+## Contributing
+
+This is an open-source proof of concept project. Contributions are welcome, especially:
+- Security improvements and vulnerability fixes
+- Feature completion and bug fixes
+- Documentation improvements
+- Test coverage expansion
+
+Please review the code thoroughly and test any changes in isolated environments.
+
+## Reporting Issues
+
+If you discover security vulnerabilities or critical bugs:
+1. **Do not** create public GitHub issues for security vulnerabilities
+2. Contact the maintainers privately for security issues
+3. For non-security bugs, feel free to open GitHub issues
+4. Include detailed reproduction steps and environment information
 
 ## License
 
-MIT License - see LICENSE file for details
+Apache 2.0 - see LICENSE file for details
+
+**Note**: This license applies to the code, but remember this is proof of concept software not suitable for production use.
