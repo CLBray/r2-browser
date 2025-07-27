@@ -251,11 +251,15 @@ app.post('/api/files/multipart/abort', authMiddleware, async (c) => {
     }
 })
 
-app.get('/api/files/:key*', authMiddleware, async (c) => {
+app.get('/api/files/*', authMiddleware, async (c) => {
     try {
         const r2Service = getR2Service(c)
-        const key = c.req.param('key') + (c.req.param('0') || '')
+        // Extract the file path from the URL
+        const fullPath = c.req.path
+        const key = fullPath.replace('/api/files/', '')
         const range = c.req.header('Range')
+
+
 
         // Get the file with range support if specified
         const object = range

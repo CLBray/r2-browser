@@ -254,7 +254,10 @@ export class R2Service {
    * @returns The file object or null if not found
    */
   async getFile(key: string): Promise<R2Object | null> {
-    return await this.bucket.get(key)
+    console.log('R2Service.getFile called with key:', key)
+    const result = await this.bucket.get(key)
+    console.log('R2Service.getFile result:', result ? 'found' : 'not found')
+    return result
   }
   
   /**

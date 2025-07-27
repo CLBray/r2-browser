@@ -35,11 +35,11 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
 
   const activeDownloads = useRef<Set<string>>(new Set());
   const downloadQueue = useRef<string[]>([]);
-  const processQueueRef = useRef<(() => Promise<void>) | null>(null);
+  const tasksRef = useRef<Record<string, DownloadTask>>({});
 
   // Generate unique task ID
   const generateTaskId = useCallback(() => {
-    return `download-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `download-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }, []);
 
   // Update overall state
@@ -77,6 +77,15 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
 
   // Update task
   const updateTask = useCallback((taskId: string, updates: Partial<DownloadTask>) => {
+    // Update ref first
+    if (tasksRef.current[taskId]) {
+      tasksRef.current[taskId] = {
+        ...tasksRef.current[taskId],
+        ...updates,
+      };
+    }
+
+    // Update state
     setState(prevState => ({
       ...prevState,
       tasks: {
@@ -90,18 +99,8 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
   }, []);
 
   // Download file with progress tracking and resumable support
-  const downloadFileInternal = useCallback(async (taskId: string) => {
-    // Get the current task from state
-    let task: DownloadTask | undefined;
-    setState(prevState => {
-      task = prevState.tasks[taskId];
-      return prevState;
-    });
-
-    if (!task) {
-      console.error('Task not found:', taskId);
-      return;
-    }
+  const downloadFileInternal = useCallback(async (task: DownloadTask) => {
+    const taskId = task.id;
 
     try {
       updateTask(taskId, { 
@@ -211,30 +210,28 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
         fileName: task.fileName,
         fileSize: task.fileSize,
       });
+    } finally {
+      activeDownloads.current.delete(taskId);
+      processQueue();
     }
   }, [updateTask]);
 
   // Process download queue
-  const processQueue = useCallback(async () => {
+  const processQueue = useCallback(() => {
     while (downloadQueue.current.length > 0 && activeDownloads.current.size < MAX_CONCURRENT_DOWNLOADS) {
       const taskId = downloadQueue.current.shift();
       if (!taskId) continue;
 
-      activeDownloads.current.add(taskId);
-      
-      // Start download in background
-      downloadFileInternal(taskId).finally(() => {
-        activeDownloads.current.delete(taskId);
-        // Process next item in queue without recursion
-        if (downloadQueue.current.length > 0 && processQueueRef.current) {
-          setTimeout(() => processQueueRef.current?.(), 0);
-        }
-      });
-    }
-  }, []);
+      const task = tasksRef.current[taskId];
+      if (!task) {
+        console.warn('Task not found in ref, skipping:', taskId);
+        continue;
+      }
 
-  // Store the processQueue function in ref to avoid circular dependency
-  processQueueRef.current = processQueue;
+      activeDownloads.current.add(taskId);
+      downloadFileInternal(task);
+    }
+  }, [downloadFileInternal]);
 
   // Add download task
   const addDownload = useCallback((file: FileObject) => {
@@ -251,6 +248,10 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
       resumable: file.size > CHUNK_SIZE, // Enable resumable for files > 1MB
     };
 
+    // Add to ref immediately
+    tasksRef.current[taskId] = task;
+
+    // Update state
     setState(prevState => ({
       ...prevState,
       tasks: {
@@ -259,31 +260,33 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
       },
     }));
 
+    // Add to queue and process immediately
     downloadQueue.current.push(taskId);
-    processQueueRef.current?.();
+    processQueue();
 
     return taskId;
-  }, [generateTaskId]);
+  }, [generateTaskId, processQueue]);
 
   // Retry download
   const retryDownload = useCallback((taskId: string) => {
-    const task = state.tasks[taskId];
+    const task = tasksRef.current[taskId];
     if (!task || task.status !== 'error') return;
 
-    updateTask(taskId, {
-      status: 'pending',
+    const updates = {
+      status: 'pending' as const,
       error: undefined,
       progress: 0,
       bytesDownloaded: 0,
-    });
+    };
 
+    updateTask(taskId, updates);
     downloadQueue.current.push(taskId);
-    processQueueRef.current?.();
-  }, [state.tasks, updateTask]);
+    processQueue();
+  }, [processQueue, updateTask]);
 
   // Cancel download
   const cancelDownload = useCallback((taskId: string) => {
-    const task = state.tasks[taskId];
+    const task = tasksRef.current[taskId];
     if (!task) return;
 
     if (task.status === 'downloading') {
@@ -297,10 +300,8 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
       downloadQueue.current.splice(queueIndex, 1);
     }
 
-    updateTask(taskId, {
-      status: 'canceled',
-    });
-  }, [state.tasks, updateTask]);
+    updateTask(taskId, { status: 'canceled' });
+  }, [updateTask]);
 
   // Remove completed/failed downloads
   const clearCompleted = useCallback(() => {
@@ -310,6 +311,7 @@ export const DownloadManager: React.FC<DownloadManagerProps> = ({
         const task = newTasks[taskId];
         if (task.status === 'completed' || task.status === 'error' || task.status === 'canceled') {
           delete newTasks[taskId];
+          delete tasksRef.current[taskId]; // Also remove from ref
         }
       });
       return {
@@ -523,7 +525,7 @@ export const useDownloadManager = () => {
   const downloadFile = useCallback((file: FileObject) => {
     setDownloadRequests(prev => [...prev, file]);
     setIsVisible(true);
-    return `download-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `download-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }, []);
 
   const handleDownloadRequestProcessed = useCallback((file: FileObject) => {
