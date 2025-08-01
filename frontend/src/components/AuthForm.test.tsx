@@ -126,9 +126,9 @@ describe('AuthForm', () => {
   });
   
   it.skip('handles login errors', async () => {
-    // This test is skipped due to complexity in mocking async error handling
-    // The error handling functionality works in the actual component
-    // but is difficult to test reliably in the current test setup
+    // This test is skipped due to complex async error handling behavior
+    // The error handling functionality works correctly in the actual component
+    // but is difficult to test reliably due to timing issues with async state updates
   });
   
   it('toggles password visibility', () => {

@@ -13,12 +13,13 @@ vi.mock('../utils/performance-monitor', () => ({
 // Mock react-dropzone
 vi.mock('react-dropzone', () => ({
   useDropzone: () => ({
-    getRootProps: () => ({
+    getRootProps: (props?: any) => ({
       onClick: vi.fn(),
       onKeyDown: vi.fn(),
       tabIndex: 0,
       role: 'button',
-      'aria-label': 'dropzone'
+      'aria-label': 'dropzone',
+      className: props?.className || ''
     }),
     getInputProps: () => ({
       onChange: vi.fn(),
@@ -65,22 +66,13 @@ describe('UploadZone', () => {
     expect(uploadButton).toHaveClass('opacity-50');
   });
 
-  // Skipping this test for now as the custom class handling needs to be fixed in the component
-  it.skip('applies custom className when provided', () => {
+  it('applies custom className when provided', () => {
     const { container } = render(<UploadZone {...defaultProps} className="custom-class" />);
     
-    // Since we're using template literals for class names in the component,
-    // the class might be part of a longer string. Let's check if any element
-    // has a class that contains our custom class
-    const hasElementWithCustomClass = Array.from(container.querySelectorAll('*'))
-      .some(element => {
-        if (typeof element.className === 'string') {
-          return element.className.includes('custom-class');
-        }
-        return false;
-      });
-    
-    expect(hasElementWithCustomClass).toBe(true);
+    // The custom className is applied to the dropzone div inside the upload-zone wrapper
+    // Check if any element contains the custom class
+    const elementWithCustomClass = container.querySelector('[class*="custom-class"]');
+    expect(elementWithCustomClass).not.toBeNull();
   });
 
   it('handles upload button click', () => {
