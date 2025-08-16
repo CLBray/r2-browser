@@ -42,18 +42,16 @@ Track the completion status of our development tasks and specifications:
 ### Overall Progress
 | Metric | Status |
 |--------|--------|
-| Overall Task Completion | ![Overall Progress](badges/overall-progress.svg) |
-| Total Tasks | ![Total Tasks](badges/total-tasks.svg) |
-| Completed Tasks | ![Completed Tasks](badges/completed-tasks.svg) |
+| Total Tasks | ![Total Tasks](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/CLBray/r2-browser/refs/heads/main/.kiro/badges/badge-data-all.json&query=$.message&label=All%20Kiro%20Tasks&color=brightgreen)
 
 ### Specification Progress
-| Specification | Progress | Tasks |
-|---------------|----------|-------|
-| R2 File Explorer | ![R2 File Explorer Progress](badges/r2-file-explorer-progress.svg) | ![R2 File Explorer Tasks](badges/r2-file-explorer-tasks.svg) |
-| Authentication Testing | ![Auth Testing Progress](badges/auth-testing-progress.svg) | ![Auth Testing Tasks](badges/auth-testing-tasks.svg) |
-| File Upload Functionality | ![File Upload Progress](badges/file-upload-functionality-progress.svg) | ![File Upload Tasks](badges/file-upload-functionality-tasks.svg) |
-| Security Posture Enhancement | ![Security Progress](badges/enhance-security-posture-progress.svg) | ![Security Tasks](badges/enhance-security-posture-tasks.svg) |
-| UI Redesign | ![UI Redesign Progress](badges/fresh-fun-ui-redesign-progress.svg) | ![UI Redesign Tasks](badges/fresh-fun-ui-redesign-tasks.svg) |
+| Specification | Progress |
+|---------------|----------|
+| R2 File Explorer | ![R2 File Explorer Progress](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/CLBray/r2-browser/refs/heads/main/.kiro/badges/r2-file-explorer-badge-data.json&query=$.message&label=r2-file-explorer%20Kiro%20Tasks&color=brightgreen) |
+| Authentication Testing | ![Auth Testing Progress](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/CLBray/r2-browser/refs/heads/main/.kiro/badges/auth-testing-badge-data.json&query=$.message&label=auth-testing%20Kiro%20Tasks&color=brightgreen) |
+| File Upload Functionality | ![File Upload Progress](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/CLBray/r2-browser/refs/heads/main/.kiro/badges/file-upload-functionality-badge-data.json&query=$.message&label=file-upload-functionality%20Kiro%20Tasks&color=brightgreen) |
+| Security Posture Enhancement | ![Security Progress](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/CLBray/r2-browser/refs/heads/main/.kiro/badges/enhance-security-posture-badge-data.json&query=$.message&label=enhance-security-posture%20Kiro%20Tasks&color=brightgreen) |
+| UI Redesign | ![UI Redesign Progress](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/CLBray/r2-browser/refs/heads/main/.kiro/badges/fresh-fun-ui-redesign-badge-data.json&query=$.message&label=fresh-fun-ui-redesign%20Kiro%20Tasks&color=brightgreen) |
 
 *Badges are automatically updated on each commit via GitHub Actions*
 
