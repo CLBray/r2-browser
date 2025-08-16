@@ -1,0 +1,31 @@
+name: Update Kiro Badges
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  update-badges:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Update Kiro badges
+      uses: CLBray/kiro-github-badges@v1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        specs-path: '.kiro/specs'
+        output-path: 'badges'
+        
+    - name: Commit badge updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add badges/
+        git diff --staged --quiet || git commit -m "Update Kiro task completion badges"
+        git push

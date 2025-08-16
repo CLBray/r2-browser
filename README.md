@@ -35,6 +35,28 @@ A web-based file management application that provides a familiar desktop file ma
 
 **By using this application, you acknowledge these risks and limitations.**
 
+## Development Progress
+
+Track the completion status of our development tasks and specifications:
+
+### Overall Progress
+| Metric | Status |
+|--------|--------|
+| Overall Task Completion | ![Overall Progress](badges/overall-progress.svg) |
+| Total Tasks | ![Total Tasks](badges/total-tasks.svg) |
+| Completed Tasks | ![Completed Tasks](badges/completed-tasks.svg) |
+
+### Specification Progress
+| Specification | Progress | Tasks |
+|---------------|----------|-------|
+| R2 File Explorer | ![R2 File Explorer Progress](badges/r2-file-explorer-progress.svg) | ![R2 File Explorer Tasks](badges/r2-file-explorer-tasks.svg) |
+| Authentication Testing | ![Auth Testing Progress](badges/auth-testing-progress.svg) | ![Auth Testing Tasks](badges/auth-testing-tasks.svg) |
+| File Upload Functionality | ![File Upload Progress](badges/file-upload-functionality-progress.svg) | ![File Upload Tasks](badges/file-upload-functionality-tasks.svg) |
+| Security Posture Enhancement | ![Security Progress](badges/enhance-security-posture-progress.svg) | ![Security Tasks](badges/enhance-security-posture-tasks.svg) |
+| UI Redesign | ![UI Redesign Progress](badges/fresh-fun-ui-redesign-progress.svg) | ![UI Redesign Tasks](badges/fresh-fun-ui-redesign-tasks.svg) |
+
+*Badges are automatically updated on each commit via GitHub Actions*
+
 ## Features
 
 - **File Browser**: Navigate R2 buckets with familiar file explorer UI
