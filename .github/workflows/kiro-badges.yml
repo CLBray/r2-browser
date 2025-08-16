@@ -1,31 +1,70 @@
-name: Update Kiro Badges
+# Advanced Kiro Task Badge Workflow
+# Place this file at: .github/workflows/kiro-badges.yml
+
+name: Update Kiro Task Badges
 
 on:
+  # Trigger on task file changes in specific branches
   push:
-    branches: [ main, master ]
+    paths:
+      - '.kiro/specs/**/tasks.md'
+    branches: 
+      - main
+      - develop
+      - 'feature/*'
+  
+  # Trigger on pull requests affecting task files
   pull_request:
-    branches: [ main, master ]
+    paths:
+      - '.kiro/specs/**/tasks.md'
+    branches: [main, develop]
+  
+  # Scheduled updates (Sunday at 6 AM UTC)
+  schedule:
+    - cron: '0 6 * * 0'
+  
+  # Manual trigger with custom inputs
   workflow_dispatch:
+    inputs:
+      commit_message:
+        description: 'Custom commit message'
+        required: false
+        default: 'Update Kiro task completion badges'
 
 jobs:
   update-badges:
     runs-on: ubuntu-latest
     
+    # Enhanced permissions
+    permissions:
+      contents: write
+      pull-requests: read
+    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # Fetch full history for better git operations
+          fetch-depth: 0
+          
+      - name: Generate Kiro task badges
+        uses: CLBray/kiro-github-badges@v0.9.1-beta
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: ${{ github.event.inputs.commit_message || 'Update Kiro task completion badges [skip ci]' }}
+        env:
+          # Enable debug logging
+          ACTIONS_STEP_DEBUG: true
       
-    - name: Update Kiro badges
-      uses: CLBray/kiro-github-badges@v1
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        specs-path: '.kiro/specs'
-        output-path: 'badges'
-        
-    - name: Commit badge updates
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add badges/
-        git diff --staged --quiet || git commit -m "Update Kiro task completion badges"
-        git push
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body: '🏷️ Kiro task badges have been updated based on the changes in this PR.'
+            });
