@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 0
           
       - name: Generate Kiro task badges
-        uses: CLBray/kiro-github-badges@v0.9.1-beta
+        uses: CLBray/kiro-github-badges@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: ${{ github.event.inputs.commit_message || 'Update Kiro task completion badges [skip ci]' }}
